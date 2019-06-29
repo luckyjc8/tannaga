@@ -2,9 +2,9 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 
-class LetterTemplate extends Model
+class LetterTemplate extends Eloquent
 {
     public function file($name){
     	return ($this->where('name',$name)->get('path'));
