@@ -13,6 +13,6 @@
 
 $router->get('/', function () use ($router) {
 	$user = new \App\User;
-	dd("asdf");
+	dd("aasdf");
     return $router->app->version();
 });
