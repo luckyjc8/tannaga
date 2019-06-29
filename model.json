@@ -1,0 +1,46 @@
+user : {
+	"id" : "integer",
+	"name" : "string",
+	"email" : "string",
+	"password" : "secret",
+	"is_activated" : "string",
+	"pricing" : "integer",
+	"timestamps" : "timestamps"
+}
+
+letter : {
+	"id" : "integer",
+	"timestamps" : "timestamps",
+	"letter-template_id" : "integer",
+	"fields" : {
+		"field_name1" : "value1",
+		"field_name2" : "value2",
+		"field_name3" : "value3",
+	}
+}
+
+letter-template : {
+	"id" : "integer",
+	"timestamps" : "timestamps",
+	"fields" : {
+		"field1" : {
+			"field_name" : "string",
+			"type" : "string",
+			"desc" : "string",
+		}
+	},
+	"docs" : "docx"
+}
+
+letter-header : {
+	"id" : "integer",
+	"timestamps" : "timestamps",
+	"fields" : {
+		"field1" : {
+			"field_name" : "string",
+			"type" : "string",
+			"desc" : "string",
+		}
+	},	
+	"docs" : "docx"
+}
