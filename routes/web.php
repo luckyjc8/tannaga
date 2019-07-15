@@ -13,13 +13,18 @@ use App\User;
 |
 */
 
-$router->get('/', function () use ($router) {
+/*$router->get('/', function () use ($router) {
 	$arr = ["hua"=>["hua2"=>"asdf"],"hau"=>"qwer"];
-	$lt = new \App\LetterTemplate;
+	$lt = new \App\LetterTemplate;	
 	$lt->name = "hua";
 	$lt->someRandomAttr = $arr;
 	$lt->save();
 	dd(\App\LetterTemplate::all());
-
     return $router->app->version();
-});
+});*/
+
+//User API
+$router->get('/user/{id}','UsersController@get');
+$router->post('/user/create','UsersController@create');
+$router->post('/user/update/{id}','UsersController@update');
+$router->post('/user/delete/{id}','UsersController@delete');

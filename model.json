@@ -16,7 +16,8 @@ letter : {
 		"field_name1" : "value1",
 		"field_name2" : "value2",
 		"field_name3" : "value3",
-	}
+	},
+	"path" : "string"
 }
 
 letter-template : {
@@ -29,7 +30,7 @@ letter-template : {
 			"desc" : "string",
 		}
 	},
-	"docs" : "docx"
+	"path" : "string"
 }
 
 letter-header : {
@@ -42,5 +43,5 @@ letter-header : {
 			"desc" : "string",
 		}
 	},	
-	"docs" : "docx"
+	"path" : "string"
 }
