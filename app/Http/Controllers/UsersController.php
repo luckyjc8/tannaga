@@ -13,7 +13,7 @@ class UsersController extends Controller
 
 	public function create(Request $request){
 		$user = new User;
-		foreach($fields as $field){
+		foreach($this->fields as $field){
 			$user->$field = $request->$field;
 		}
 		$user->is_activated = false;
@@ -46,7 +46,7 @@ class UsersController extends Controller
 
 	public function update($id, Request $request){
 		$user = User::where('_id',$id)->first();
-		foreach($fields as $field){
+		foreach($this->fields as $field){
 			$user->$field = $request->$field;
 		}
 		$user->updated_at = Carbon::now();

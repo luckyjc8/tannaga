@@ -2,16 +2,15 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
-use App\User as User;
+use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 
-class Letter extends Model
+class Letter extends Eloquent
 {
-    public function user(){
+   /* public function user(){
         return $this->belongsTo('User');
     }
 
     public function file($name){
     	return $this->where('name',$name)->get('path');
-    }
+    }*/
 }

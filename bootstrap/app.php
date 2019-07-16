@@ -55,6 +55,14 @@ $app->singleton(
     App\Console\Kernel::class
 );
 
+$app->middleware([
+    App\Http\Middleware\Auth::class
+]);
+
+$app->routeMiddleware([
+    'auth' => App\Http\Middleware\Auth::class,
+]);
+
 /*
 |--------------------------------------------------------------------------
 | Register Middleware
