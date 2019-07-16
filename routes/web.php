@@ -25,22 +25,23 @@ use App\Mail\EmailConfirm;
     return $router->app->version();
 });*/
 
-//User API
 $router->post('/user/create','UsersController@create');
 $router->get('/user/{id}','UsersController@retrieve');
 $router->post('/user/update/{id}','UsersController@update');
 $router->post('/user/delete/{id}','UsersController@delete');
 
-$router->get('/test',function(){
-	Mail::to('gbsengonomor3@gmail.com')
-		->send(new EmailConfirm("asdf"));
-});
+/*
+$router->get('/test-email',function(){
+	Mail::to('ftnfata@gmail.com')
+		->send(new EmailConfirm("Mas... Anda cupu sekali..."));
+});*/
 
 $router->post('/letter/create','LettersController@create');
+$router->get('/letter/{id}','LettersController@retrieve');
 $router->post('/letter/update/{id}','LettersController@update');
 $router->post('/letter/delete/{id}','LettersController@delete');
 
 
 $router->group(['middleware' => 'auth'], function () use ($router) {
-	$router->get('/letter/{id}','LettersController@retrieve');
+	
 });

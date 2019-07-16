@@ -15,7 +15,6 @@ class Auth
      */
     public function handle($request, Closure $next)
     {
-        
         if ($request->header('access-token') != 'asdf'){
             dd('qwer');
         }
