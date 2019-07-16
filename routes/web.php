@@ -25,10 +25,21 @@ use App\Mail\EmailConfirm;
     return $router->app->version();
 });*/
 
-$router->post('/user/create','UsersController@create');
+//$router->post('/user/create','UsersController@create');
+$router->post('/register','UsersController@create');
 $router->get('/user/{id}','UsersController@retrieve');
 $router->post('/user/update/{id}','UsersController@update');
 $router->post('/user/delete/{id}','UsersController@delete');
+
+$router->post('/activate/{id}/{token}', 'UsersController@activate');
+$router->post('/forget/{id}', 'UsersController@forget');
+$router->post('/change/{id}/{token}', 'UsersController@change');
+
+$router->post('/login', 'UsersController@login');
+$router->post('/logout', 'UsersController@logout');
+
+
+
 
 /*
 $router->get('/test-email',function(){
@@ -45,3 +56,5 @@ $router->post('/letter/delete/{id}','LettersController@delete');
 $router->group(['middleware' => 'auth'], function () use ($router) {
 	
 });
+
+
