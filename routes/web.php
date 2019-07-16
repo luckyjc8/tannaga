@@ -24,7 +24,7 @@ use App\User;
 });*/
 
 //User API
-$router->get('/user/{id}','UsersController@get');
 $router->post('/user/create','UsersController@create');
+$router->get('/user/{id}','UsersController@retrieve');
 $router->post('/user/update/{id}','UsersController@update');
 $router->post('/user/delete/{id}','UsersController@delete');

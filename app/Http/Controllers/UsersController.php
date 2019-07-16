@@ -11,21 +11,6 @@ class UsersController extends Controller
 	protected $fields = ['name','email','password','is_activated','pricing'];
 	//fields diisi semua field kecuali id & timestamps
 
-	public function get($id){
-		$user = User::where('_id',$id)->first();
-
-		$response = $user==null ?
-		[
-			"status" => "ERROR",
-			"msg" => "User not found."
-		]:
-		[
-			"status" => "OK",
-			"data" => $user->getAttributes()
-		];
-		return response($response);
-	}
-
 	public function create(Request $request){
 		$user = new User;
 		foreach($fields as $field){
@@ -39,6 +24,21 @@ class UsersController extends Controller
 		$response = [
 			"status" => "OK",
 			"msg" => "User created."
+		];
+		return response($response);
+	}
+
+	public function retrieve($id){
+		$user = User::where('_id',$id)->first();
+
+		$response = $user==null ?
+		[
+			"status" => "ERROR",
+			"msg" => "User not found."
+		]:
+		[
+			"status" => "OK",
+			"data" => $user->getAttributes()
 		];
 		return response($response);
 	}
