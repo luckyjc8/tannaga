@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class UsersController extends Controller
 {
-	protected $fields = ['name','email','password','is_activated','pricing'];
+	protected $fields = ['name','email','password','pricing'];
 	//fields diisi semua field kecuali id & timestamps
 
 	public function create(Request $request){
@@ -16,6 +16,7 @@ class UsersController extends Controller
 		foreach($fields as $field){
 			$user->$field = $request->$field;
 		}
+		$user->is_activated = false;
 		$user->created_at = Carbon::now();
 		$user->updated_at = Carbon::now();
 		$user->deleted_at = null;

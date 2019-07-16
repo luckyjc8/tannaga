@@ -1,6 +1,8 @@
 <?php
 
 use App\User;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EmailConfirm;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,3 +30,8 @@ $router->post('/user/create','UsersController@create');
 $router->get('/user/{id}','UsersController@retrieve');
 $router->post('/user/update/{id}','UsersController@update');
 $router->post('/user/delete/{id}','UsersController@delete');
+
+$router->get('/test',function(){
+	Mail::to('gbsengonomor3@gmail.com')
+		->send(new EmailConfirm("asdf"));
+});

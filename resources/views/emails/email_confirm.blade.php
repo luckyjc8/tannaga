@@ -1,0 +1,1 @@
+testing. The test string is : {{$str}}
