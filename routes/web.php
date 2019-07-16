@@ -34,6 +34,7 @@ $router->post('/user/delete/{id}','UsersController@delete');
 $router->get('/test',function(){
 	Mail::to('gbsengonomor3@gmail.com')
 		->send(new EmailConfirm("asdf"));
+});
 
 $router->post('/letter/create','LettersController@create');
 $router->post('/letter/update/{id}','LettersController@update');
