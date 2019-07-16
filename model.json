@@ -12,10 +12,10 @@ letter : {
 	"id" : "integer",
 	"timestamps" : "timestamps",
 	"letter-template_id" : "integer",
-	"fields" : {
-		"field_name1" : "value1",
-		"field_name2" : "value2",
-		"field_name3" : "value3",
+	"attr" : {
+		"attr1" : "value1",
+		"attr2" : "value2",
+		"attr3" : "value3",
 	},
 	"path" : "string"
 }
@@ -23,9 +23,9 @@ letter : {
 letter-template : {
 	"id" : "integer",
 	"timestamps" : "timestamps",
-	"fields" : {
-		"field1" : {
-			"field_name" : "string",
+	"attrs" : {
+		"attr1" : {
+			"attr_name" : "string",
 			"type" : "string",
 			"desc" : "string",
 		}
@@ -36,9 +36,9 @@ letter-template : {
 letter-header : {
 	"id" : "integer",
 	"timestamps" : "timestamps",
-	"fields" : {
-		"field1" : {
-			"field_name" : "string",
+	"attrs" : {
+		"attr1" : {
+			"attr_name" : "string",
 			"type" : "string",
 			"desc" : "string",
 		}

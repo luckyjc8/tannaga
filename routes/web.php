@@ -28,3 +28,12 @@ $router->post('/user/create','UsersController@create');
 $router->get('/user/{id}','UsersController@retrieve');
 $router->post('/user/update/{id}','UsersController@update');
 $router->post('/user/delete/{id}','UsersController@delete');
+
+$router->post('/letter/create','LettersController@create');
+$router->post('/letter/update/{id}','LettersController@update');
+$router->post('/letter/delete/{id}','LettersController@delete');
+
+
+$router->group(['middleware' => 'auth'], function () use ($router) {
+	$router->get('/letter/{id}','LettersController@retrieve');
+});

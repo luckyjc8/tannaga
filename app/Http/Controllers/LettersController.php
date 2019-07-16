@@ -4,30 +4,69 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Letter;
-use App\User;
-use Storage;
-use Illuminate\Support\Facades\File;
+use Carbon\Carbon;
 
 class LettersController extends Controller
 {
-    public function create(Request $request,$id){
-    	$letter = new Letter;
-    	$old_path = 'users/'.$id.'/temp/'.$request->chosen_temp.'.docx';
-    	$new_path = 'users/'.$id.'/'.$request->fname.'.docx';
-    	$file = Storage::disk('public')->get($old_path);
-    	Storage::disk('local')->put($new_path,$file);
-    	$letter->name = $request->fname;
-    	$letter->path = $new_path;
-    	$letter->user_id = 1;
-    	$letter->save();
-    	return redirect('/user/'.$id.'/letter/'.$letter->id);
-    }
+	protected $fields = ['letter-template-id', 'attrs', 'path'];
+	//fields diisi semua field kecuali id & timestamps
 
-    public function show($uid,$lid){
-    	$letter = Letter::where('id',$lid)->first();
-    	$data['uid'] = $uid;
-    	$data['letter'] = $letter;
-        return Storage::disk('local')->download($letter->path);
-        //return view('show-letter',$data);
-    }
+	public function create(Request $request){
+		$letter = new Letter;
+		foreach($this->fields as $field){
+			$letter->$field = $request->$field;
+		}
+		$letter->created_at = Carbon::now();
+		$letter->updated_at = Carbon::now();
+		$letter->deleted_at = null;
+		$letter->save();
+
+		$response = [
+			"status" => "OK",
+			"msg" => "Letter created."
+		];
+		return response($response);
+	}
+
+	public function retrieve($id){
+		$letter = Letter::where('_id',$id)->first();
+
+		$response = $letter==null || $letter->deleted_at!=null ?
+		[
+			"status" => "ERROR",
+			"msg" => "Letter not found."
+		]:
+		[
+			"status" => "OK",
+			"data" => $letter->getAttributes()
+		];
+		return response($response);
+	}
+
+	public function update($id, Request $request){
+		$letter = Letter::where('_id',$id)->first();
+		foreach($this->fields as $field){
+			$letter->$field = $request->$field;
+		}
+		$letter->updated_at = Carbon::now();
+		$letter->save();
+
+		$response = [
+			"status" => "OK",
+			"msg" => "Letter updated."
+		];
+		return response($response);
+	}
+
+	public function delete($id, Request $request){
+		$letter = Letter::where('_id',$id)->first();
+		$letter->deleted_at = Carbon::now();
+		$letter->save();
+
+		$response = [
+			"status" => "OK",
+			"msg" => "Letter deleted."
+		];
+		return response($response);
+	}
 }
