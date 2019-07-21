@@ -1,1 +1,4 @@
-testing. The test string is : {{$str}}
+Thank you for registering to Tannaga.
+
+To activate your account, follow the link bellow :
+{{$str}}

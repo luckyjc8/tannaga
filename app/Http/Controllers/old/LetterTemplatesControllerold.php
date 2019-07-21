@@ -10,7 +10,7 @@ use \PhpOffice\PhpWord\TemplateProcessor;
 use Illuminate\Support\Facades\View;
 use Carbon\Carbon;
 
-class LetterTemplatesController extends Controller
+class LetterTemplatesControllerold extends Controller
 {
     public function list(){
     	$data['tls'] = DB::table('letter_templates')->paginate(9);

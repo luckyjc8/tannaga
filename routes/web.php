@@ -53,8 +53,10 @@ $router->post('/letter/update/{id}','LettersController@update');
 $router->post('/letter/delete/{id}','LettersController@delete');
 
 
+$router->get('/test', function (){
+	return view('emails.email_confirm');
+});
 $router->group(['middleware' => 'auth'], function () use ($router) {
-	
 });
 
 

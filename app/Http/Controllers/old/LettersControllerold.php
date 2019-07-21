@@ -8,7 +8,7 @@ use App\User;
 use Storage;
 use Illuminate\Support\Facades\File;
 
-class LettersController extends Controller
+class LettersControllerold extends Controller
 {
     public function create(Request $request,$id){
     	$letter = new Letter;
