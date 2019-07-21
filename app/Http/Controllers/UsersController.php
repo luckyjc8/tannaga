@@ -13,7 +13,7 @@ use App\Mail\PasswordReset;
 
 class UsersController extends Controller
 {
-	protected $fields = ['name','email','password','pricing'];
+	protected $fields = ['name','email'];
 	//fields diisi semua field kecuali id & timestamps
 
 	public function create(Request $request){
@@ -21,6 +21,7 @@ class UsersController extends Controller
 		foreach($this->fields as $field){
 			$user->$field = $request->$field;
 		}
+		$user->password = Hash::make($request->password);
 		$user->is_activated = false;
 		$user->created_at = Carbon::now();
 		$user->updated_at = Carbon::now();
@@ -101,7 +102,8 @@ class UsersController extends Controller
 
 	public function login(Request $request){
 		$user = User::where('email',$request->email)->first();
-		if ($user==null || !Hash::check($request->password, $user->password)) {
+		if ($user==null || !Hash::check($request->password, $user->password || !$user->is_activated)) {
+			dd([$user, $request->all()]);
 			$response =[
 				"status" => "ERROR",
 				"msg" => "Invalid login."
