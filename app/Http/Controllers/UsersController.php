@@ -7,6 +7,9 @@ use Illuminate\Support\Str;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EmailConfirm;
+use App\Mail\PasswordReset;
 
 class UsersController extends Controller
 {
