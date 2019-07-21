@@ -32,3 +32,6 @@ $router->post('/forget', 'UsersController@forget');
 $router->post('/change/{id}/{token}', 'UsersController@change');
 $router->post('/login', 'UsersController@login');
 $router->post('/logout', 'UsersController@logout');
+$router->get('/test', function(){
+	dd(Illuminate\Support\Facades\Hash::check('sdf', '$2y$10$HWAzZPVyoqehbGa7.rkcM.JEBxALM.9OMnIhkeGSTVlldSKDWxz/m'));
+});

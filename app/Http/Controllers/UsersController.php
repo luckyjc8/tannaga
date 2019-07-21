@@ -22,19 +22,19 @@ class UsersController extends Controller
 			$user->$field = $request->$field;
 		}
 		$user->password = Hash::make($request->password);
-		$user->is_activated = false;
+		$user->is_activated = true;
 		$user->created_at = Carbon::now();
 		$user->updated_at = Carbon::now();
 		$user->deleted_at = null;
 		$str = Str::random(60);
 		$user->activate_link = Hash::make($str);
-		$user->save();
 
 		$response = [
 			"status" => "OK",
 			"msg" => "User created."
 		];
-		Mail::to($user->email)->queue(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
+		/*Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));*/
+		$user->save();
 		return response($response);
 	}
 
@@ -102,7 +102,7 @@ class UsersController extends Controller
 
 	public function login(Request $request){
 		$user = User::where('email',$request->email)->first();
-		if ($user==null || !Hash::check($request->password, $user->password || !$user->is_activated)) {
+		if ($user==null || !Hash::check($request->password, $user->password) || !$user->is_activated) {
 			dd([$user, $request->all()]);
 			$response =[
 				"status" => "ERROR",
@@ -112,11 +112,11 @@ class UsersController extends Controller
 		else{
 			$str = Str::random(60);
 			$user->access_token = Hash::make($str);
-			//if remember me
 			$user->save();
 			$response = [
 				"status" => "OK",
-				"msg" => "Another HUAAAAAAAA."
+				"msg" => "Login success.",
+				"data" => ["user_id"=>$user->_id, "access_token"=>$str]
 			];
 		}
 		return response($response);

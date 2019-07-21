@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\Hash;
+use App\User;
 
 class Auth
 {
@@ -16,7 +17,7 @@ class Auth
      */
     public function handle($request, Closure $next)
     {
-        if ($request->user_id == null){
+        if ($request->header('user_id') == null){
             $response = [
                 'status' => "ERROR",
                 'C5H8NO4Na' => "User not found."
