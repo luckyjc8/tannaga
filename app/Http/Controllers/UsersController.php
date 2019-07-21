@@ -25,15 +25,15 @@ class UsersController extends Controller
 		$user->created_at = Carbon::now();
 		$user->updated_at = Carbon::now();
 		$user->deleted_at = null;
+		$str = Str::random(60);
+		$user->activate_link = Hash::make($str);
 		$user->save();
 
 		$response = [
 			"status" => "OK",
 			"msg" => "User created."
 		];
-		$str = Str::random(60);
-		$user->activate_link = Hash::make($str);
-		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
+		Mail::to($user->email)->queue(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
 		return response($response);
 	}
 
@@ -41,6 +41,7 @@ class UsersController extends Controller
 		$user = User::where('_id',$id)->first();
 
 		if ($user==null || !Hash::check($token, $user->activate_link)) {
+			dd([$user, $token, $id]);
 			$response =[
 				"status" => "ERROR",
 				"msg" => "User not found."
@@ -69,7 +70,7 @@ class UsersController extends Controller
 		else{
 			$str = Str::random(60);
 			$user->forgot_link = Hash::make($str);
-			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
+			Mail::to($user->email)->queue(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
 			$response = [
 				"status" => "OK",
 				"msg" => "Write somthing here."
