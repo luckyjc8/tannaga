@@ -29,7 +29,7 @@ class UsersController extends Controller
 		];
 		$str = String::random(60);
 		$user->activate_link = Hash::make($str);
-		//mail
+		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
 		return response($response);
 	}
 
@@ -54,8 +54,8 @@ class UsersController extends Controller
 		return response($response);
 	}
 
-	public function forget($id){
-		$user = User::where('_id',$id)->first();
+	public function forget(Request $request){
+		$user = User::where('email',$request->email)->first();
 		if ($user==null) {
 			$response =[
 				"status" => "ERROR",
@@ -65,7 +65,7 @@ class UsersController extends Controller
 		else{
 			$str = String::random(60);
 			$user->forgot_link = Hash::make($str);
-			//mail
+			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
 			$response = [
 				"status" => "OK",
 				"msg" => "Write somthing here."

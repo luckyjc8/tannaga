@@ -32,7 +32,7 @@ $router->post('/user/update/{id}','UsersController@update');
 $router->post('/user/delete/{id}','UsersController@delete');
 
 $router->post('/activate/{id}/{token}', 'UsersController@activate');
-$router->post('/forget/{id}', 'UsersController@forget');
+$router->post('/forget', 'UsersController@forget');
 $router->post('/change/{id}/{token}', 'UsersController@change');
 
 $router->post('/login', 'UsersController@login');
@@ -54,6 +54,8 @@ $router->post('/letter/delete/{id}','LettersController@delete');
 
 
 $router->get('/test', function (){
+	Mail::to('ftnfata@gmail.com')
+		->send(new EmailConfirm("Mas... Anda cupu sekali..."));
 	return view('emails.email_confirm');
 });
 $router->group(['middleware' => 'auth'], function () use ($router) {
