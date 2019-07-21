@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -27,7 +28,7 @@ class UsersController extends Controller
 			"status" => "OK",
 			"msg" => "User created."
 		];
-		$str = String::random(60);
+		$str = Str::random(60);
 		$user->activate_link = Hash::make($str);
 		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
 		return response($response);
@@ -63,7 +64,7 @@ class UsersController extends Controller
 			];
 		}
 		else{
-			$str = String::random(60);
+			$str = Str::random(60);
 			$user->forgot_link = Hash::make($str);
 			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
 			$response = [
@@ -103,7 +104,7 @@ class UsersController extends Controller
 			];
 		}
 		else{
-			$str = String::random(60);
+			$str = Str::random(60);
 			$user->access_token = Hash::make($str);
 			//if remember me
 			$user->save();
