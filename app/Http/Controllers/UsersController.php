@@ -33,19 +33,23 @@ class UsersController extends Controller
 			"status" => "OK",
 			"msg" => "User created."
 		];
-		/*Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));*/
+		//Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
 		$user->save();
 		return response($response);
 	}
 
 	public function activate($id, $token){
 		$user = User::where('_id',$id)->first();
-
-		if ($user==null || !Hash::check($token, $user->activate_link)) {
-			dd([$user, $token, $id]);
+		if ($user==null) {
 			$response =[
 				"status" => "ERROR",
 				"msg" => "User not found."
+			];
+		}
+		else if (!Hash::check($token, $user->activate_link)){
+			$response =[
+				"status" => "ERROR",
+				"msg" => "Token invalid"
 			];
 		}
 		else{
@@ -71,10 +75,10 @@ class UsersController extends Controller
 		else{
 			$str = Str::random(60);
 			$user->forgot_link = Hash::make($str);
-			Mail::to($user->email)->queue(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
+			//Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
 			$response = [
 				"status" => "OK",
-				"msg" => "Write somthing here."
+				"msg" => "Password reset link sent to email."
 			];
 		}
 		return response($response);
@@ -94,7 +98,7 @@ class UsersController extends Controller
 			$user->save();
 			$response = [
 				"status" => "OK",
-				"msg" => "HUAAAAAAAA."
+				"msg" => "Password changed."
 			];
 		}
 		return response($response);
@@ -111,7 +115,13 @@ class UsersController extends Controller
 		}
 		else{
 			$str = Str::random(60);
-			$user->access_token = Hash::make($str);
+			if ($request->remember_me){
+				Cookie::make("remember_token", $str, 60*24*30*3);
+				$user->remember_token = Hash::make($str);
+			}
+			else{
+				$user->access_token = Hash::make($str);
+			}
 			$user->save();
 			$response = [
 				"status" => "OK",
@@ -133,11 +143,10 @@ class UsersController extends Controller
 		else{
 			$user->access_token = null;
 			$user->remember_token = null;
-			//if remember me
 			$user->save();
 			$response = [
 				"status" => "OK",
-				"msg" => "Logout succeeded."
+				"msg" => "Logout success."
 			];
 		}
 		return response($response);
