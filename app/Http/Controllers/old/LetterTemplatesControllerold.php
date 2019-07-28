@@ -24,7 +24,14 @@ class LetterTemplatesControllerold extends Controller
         $new_vars = array_diff($data['vars'],array("_now_date"));
         $data['id'] = $id;
         $data['vars'] = $new_vars;
-    	return view('template-form',$data);
+        $response = [
+            "status" => "OK",
+            "data" => [
+                "id" => $id,
+                "vars" => $vars
+            ]
+        ];
+    	return response($response);
     }
 
     public function generate(Request $request,$id){
@@ -59,7 +66,11 @@ class LetterTemplatesControllerold extends Controller
         $data['template'] = $template;
         $data['user'] = 'user1';
         $data['id'] = $uid;
-        return view('finalize',$data);
+        $response = [
+            "status" => "OK",
+            "data" => $data
+        ];
+        return response($response);
     }
 
     public function dateTimeToIndo($dt){

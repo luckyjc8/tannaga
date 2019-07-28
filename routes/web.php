@@ -1,6 +1,7 @@
 <?php
 
 use App\User;
+use App\LetterTemplate;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailConfirm;
 
@@ -32,3 +33,10 @@ $router->post('/forget', 'UsersController@forget');
 $router->post('/change/{id}/{token}', 'UsersController@change');
 $router->post('/login', 'UsersController@login');
 $router->post('/logout', 'UsersController@logout');
+$router->get('/test', function (){
+	$lt = new LetterTemplate();
+	$lt->name = "Surat Pengunduran Diri";
+	$lt->count = 5;
+	$lt->save();
+});
+$router->post('/edit_letter/{id}/{index}', "LettersController@uploadLetter");
