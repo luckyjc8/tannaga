@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use App\Letter;
 use Carbon\Carbon;
 use Storage;
+use \Exception;
 
 class LettersController extends Controller
 {
@@ -90,30 +91,37 @@ class LettersController extends Controller
     }
 
     public function uploadLetter($id){
-    	$filename = Carbon::now().Str::random(10).'.docx';
-    	$letter = Letter::where('_id', $id)->first();
-    	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
-    	$localfile = Storage::disk('local')->get($path);
-    	Storage::cloud()->put($filename, $localfile);
     	$dir = '/';
 	    $recursive = false; // Get subdirectories also?
 	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
+    	$letter = Letter::where('_id', $id)->first();
+    	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
+    	$dir = $contents->where('type', '=', 'dir')
+	        ->where('filename', '=', "Test Dir")
+	        ->first();
+	    if (!$dir) {
+	        return 'User does not exist!';
+	    }
+    	$filename = 'dfasd.docx';
+    	$localfile = Storage::disk('local')->get($path);
+    	Storage::cloud()->put($dir['path'].'/'.$filename, $localfile);
+	    $recursive = false; // Get subdirectories also?
+	    $contents = collect(Storage::cloud()->listContents($dir['path'], $recursive));
 	    $file = $contents
 	        ->where('type', '=', 'file')
 	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
         	->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
 	        ->first(); // there can be duplicate file names!
-
 	    // Change permissions
 	    // - https://developers.google.com/drive/v3/web/about-permissions
 	    // - https://developers.google.com/drive/v3/reference/permissions
 	    $service = Storage::cloud()->getAdapter()->getService();
 	    $permission = new \Google_Service_Drive_Permission();
-	    $permission->setRole('writer');
+		$permission->setRole('writer');
 	    $permission->setType('anyone');
 	    $permission->setAllowFileDiscovery(false);
-	    $permissions = $service->permissions->create($file['basename'], $permission);
-	    $rawLink = Storage::cloud()->url($file['path']);
+
+	    $rawLink = Storage::cloud()->url($file['basename']);
 	    $rawLink = parse_url($rawLink, PHP_URL_QUERY);
 	    $fileId = substr(explode('&',$rawLink)[0],3);
 	    $realLink = "https://docs.google.com/document/d/".$fileId."/edit";
@@ -122,6 +130,7 @@ class LettersController extends Controller
 			"msg" => "File uploaded.",
 			"link" => $realLink
 		];
+    	$permissions = $service->permissions->create($file['basename'], $permission);
     	return Response($response);
     }
 
