@@ -39,4 +39,13 @@ $router->get('/test', function (){
 	$lt->count = 5;
 	$lt->save();
 });
-$router->post('/edit_letter/{id}/{index}', "LettersController@uploadLetter");
+
+$router->get('/test2',function(){
+	$l = new \App\Letter();
+	$l = 1;
+});
+
+$router->get('/test3',function(){
+	Storage::disk('local')->put('test/test2/asdf.txt',"asdf");
+});
+$router->post('/edit_letter/{id}', "LettersController@uploadLetter");

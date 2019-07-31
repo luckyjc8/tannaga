@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Letter;
 use Carbon\Carbon;
+use Storage;
 
 class LettersController extends Controller
 {
@@ -88,10 +89,10 @@ class LettersController extends Controller
     	return response($response);
     }
 
-    public function uploadLetter($id, $index){
+    public function uploadLetter($id){
     	$filename = Carbon::now().Str::random(10).'.docx';
     	$letter = Letter::where('_id', $id)->first();
-    	$path = 'letter_template/'.$letter->name.'/temp'.$index.'.docx';
+    	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
     	$localfile = Storage::disk('local')->get($path);
     	Storage::cloud()->put($filename, $localfile);
     	$dir = '/';
@@ -112,10 +113,14 @@ class LettersController extends Controller
 	    $permission->setType('anyone');
 	    $permission->setAllowFileDiscovery(false);
 	    $permissions = $service->permissions->create($file['basename'], $permission);
+	    $rawLink = Storage::cloud()->url($file['path']);
+	    $rawLink = parse_url($rawLink, PHP_URL_QUERY);
+	    $fileId = substr(explode('&',$rawLink)[0],3);
+	    $realLink = "https://docs.google.com/document/d/".$fileId."/edit";
     	$response = [
 			"status" => "OK",
 			"msg" => "File uploaded.",
-			"link" => Storage::cloud()->url($file['path'])
+			"link" => $realLink
 		];
     	return Response($response);
     }

@@ -29,7 +29,8 @@ $app->withEloquent();
 
 
 $app->register(Illuminate\Mail\MailServiceProvider::class);
-$app->configure('app');
+$app->register(App\Providers\GoogleDriveServiceProvider::class);
+//$app->configure('app');
 $app->configure('mail');
 $app->configure('queue');
 $app->configure('filesystems');

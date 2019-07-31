@@ -10,6 +10,7 @@ user : {
 
 letter : {
 	"id" : "integer",
+	"user_id" : "string",
 	"timestamps" : "timestamps",
 	"letter-template_id" : "integer",
 	"attr" : {
