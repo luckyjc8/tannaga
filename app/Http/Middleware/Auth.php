@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\Hash;
+use App\User;
 
 class Auth
 {
@@ -16,10 +17,10 @@ class Auth
      */
     public function handle($request, Closure $next)
     {
-        if ($request->user_id == null){
+        if ($request->header('user_id') == null){
             $response = [
                 'status' => "ERROR",
-                'C5H8NO4Na' => "User not found."
+                'msg' => "User not found."
             ];
             return response($response); 
         }
@@ -27,16 +28,19 @@ class Auth
         if($user == null){
            $response = [
                 'status' => "ERROR",
-                'C5H8NO4Na' => "User not found."
+                'msg' => "User not found."
             ];
             return response($response); 
+        }
+        if (Cookie::get("remember_token") != null && Hash::check(Cookie::get("remember_token"), $user->remember_token)){
+            return $next($request);
         }
         if (!Hash::check($request->header('access-token'), $user->access_token)){
             $response = [
                 'status' => "ERROR",
-                'C5H8NO4Na' => "Access token invalid."
+                'msg' => "Access token invalid."
             ];
-            return response($response); 
+            return response($response);
         }
         return $next($request);
     }

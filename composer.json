@@ -10,7 +10,8 @@
         "illuminate/routing": "^5.8",
         "jenssegers/mongodb": "^3.5",
         "laravel/lumen-framework": "5.8.*",
-        "league/flysystem": "^1.0"
+        "league/flysystem": "^1.0",
+        "nao-pon/flysystem-google-drive": "^1.1"
     },
     "require-dev": {
         "fzaninotto/faker": "^1.4",

@@ -13,7 +13,7 @@ use App\Mail\PasswordReset;
 
 class UsersController extends Controller
 {
-	protected $fields = ['name','email','password','pricing'];
+	protected $fields = ['name','email'];
 	//fields diisi semua field kecuali id & timestamps
 
 	public function create(Request $request){
@@ -21,29 +21,35 @@ class UsersController extends Controller
 		foreach($this->fields as $field){
 			$user->$field = $request->$field;
 		}
-		$user->is_activated = false;
+		$user->password = Hash::make($request->password);
+		$user->is_activated = true;
 		$user->created_at = Carbon::now();
 		$user->updated_at = Carbon::now();
 		$user->deleted_at = null;
-		$user->save();
+		$str = Str::random(60);
+		$user->activate_link = Hash::make($str);
 
 		$response = [
 			"status" => "OK",
 			"msg" => "User created."
 		];
-		$str = Str::random(60);
-		$user->activate_link = Hash::make($str);
-		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
+		//Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
+		$user->save();
 		return response($response);
 	}
 
 	public function activate($id, $token){
 		$user = User::where('_id',$id)->first();
-
-		if ($user==null || !Hash::check($token, $user->activate_link)) {
+		if ($user==null) {
 			$response =[
 				"status" => "ERROR",
 				"msg" => "User not found."
+			];
+		}
+		else if (!Hash::check($token, $user->activate_link)){
+			$response =[
+				"status" => "ERROR",
+				"msg" => "Token invalid"
 			];
 		}
 		else{
@@ -69,10 +75,10 @@ class UsersController extends Controller
 		else{
 			$str = Str::random(60);
 			$user->forgot_link = Hash::make($str);
-			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
+			//Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
 			$response = [
 				"status" => "OK",
-				"msg" => "Write somthing here."
+				"msg" => "Password reset link sent to email."
 			];
 		}
 		return response($response);
@@ -92,7 +98,7 @@ class UsersController extends Controller
 			$user->save();
 			$response = [
 				"status" => "OK",
-				"msg" => "HUAAAAAAAA."
+				"msg" => "Password changed."
 			];
 		}
 		return response($response);
@@ -100,7 +106,8 @@ class UsersController extends Controller
 
 	public function login(Request $request){
 		$user = User::where('email',$request->email)->first();
-		if ($user==null || !Hash::check($request->password, $user->password)) {
+		if ($user==null || !Hash::check($request->password, $user->password) || !$user->is_activated) {
+			dd([$user, $request->all()]);
 			$response =[
 				"status" => "ERROR",
 				"msg" => "Invalid login."
@@ -108,12 +115,18 @@ class UsersController extends Controller
 		}
 		else{
 			$str = Str::random(60);
-			$user->access_token = Hash::make($str);
-			//if remember me
+			if ($request->remember_me){
+				Cookie::make("remember_token", $str, 60*24*30*3);
+				$user->remember_token = Hash::make($str);
+			}
+			else{
+				$user->access_token = Hash::make($str);
+			}
 			$user->save();
 			$response = [
 				"status" => "OK",
-				"msg" => "Another HUAAAAAAAA."
+				"msg" => "Login success.",
+				"data" => ["user_id"=>$user->_id, "access_token"=>$str]
 			];
 		}
 		return response($response);
@@ -130,11 +143,10 @@ class UsersController extends Controller
 		else{
 			$user->access_token = null;
 			$user->remember_token = null;
-			//if remember me
 			$user->save();
 			$response = [
 				"status" => "OK",
-				"msg" => "Logout succeeded."
+				"msg" => "Logout success."
 			];
 		}
 		return response($response);

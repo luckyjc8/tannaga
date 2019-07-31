@@ -29,7 +29,10 @@ $app->withEloquent();
 
 
 $app->register(Illuminate\Mail\MailServiceProvider::class);
-$app->configure('mail');	
+$app->configure('app');
+$app->configure('mail');
+$app->configure('queue');
+$app->configure('filesystems');
 $app->alias('mailer', Illuminate\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);
