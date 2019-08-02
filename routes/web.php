@@ -33,19 +33,7 @@ $router->post('/forget', 'UsersController@forget');
 $router->post('/change/{id}/{token}', 'UsersController@change');
 $router->post('/login', 'UsersController@login');
 $router->post('/logout', 'UsersController@logout');
-$router->get('/test', function (){
-	$lt = new LetterTemplate();
-	$lt->name = "Surat Pengunduran Diri";
-	$lt->count = 5;
-	$lt->save();
-});
 
-$router->get('/test2',function(){
-	$l = new \App\Letter();
-	$l = 1;
-});
+$router->get('/get_fields/{id}','LetterTemplatesController@form');
 
-$router->get('/test3',function(){
-	Storage::disk('local')->put('test/test2/asdf.txt',"asdf");
-});
 $router->post('/edit_letter/{id}', "LettersController@uploadLetter");
