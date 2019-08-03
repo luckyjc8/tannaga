@@ -76,8 +76,6 @@ class LettersController extends Controller
 	        ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
 	        ->first();
 
-	    //return $file; // array with file info
-
 	    $rawData = Storage::cloud()->get($file['path']);
 
 	    return response($rawData, 200)
@@ -115,7 +113,6 @@ class LettersController extends Controller
             $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
             $file->setValue("_now_date",$now);
             $file->saveAs($path);
-            //dd(Storage::disk('public')->getAdapter()->getPathPrefix());
             $localfile = Storage::disk('public')->get('/'.$path);
             Storage::disk('local')->put($path, $localfile);
             Storage::disk('public')->delete($path);
