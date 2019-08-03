@@ -35,5 +35,5 @@ $router->post('/login', 'UsersController@login');
 $router->post('/logout', 'UsersController@logout');
 
 $router->get('/get_fields/{id}','LetterTemplatesController@form');
-
+$router->post('/nanikashira/{id}','LettersController@generate');
 $router->post('/edit_letter/{id}', "LettersController@uploadLetter");

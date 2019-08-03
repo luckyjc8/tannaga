@@ -6,93 +6,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Letter;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\File;
 use Storage;
 use \Exception;
+use PhpOffice\PhpWord\PhpWord;
+use \PhpOffice\PhpWord\TemplateProcessor;
+use App\LetterTemplate;
+
 
 class LettersController extends Controller
 {
-	protected $fields = ['letter-template-id', 'attrs', 'path'];
+	//protected $fields = ['letter-template-id', 'attrs', 'path'];
 	//fields diisi semua field kecuali id & timestamps
-
-	public function create(Request $request){
-		$letter = new Letter;
-		foreach($this->fields as $field){
-			$letter->$field = $request->$field;
-		}
-		$letter->created_at = Carbon::now();
-		$letter->updated_at = Carbon::now();
-		$letter->deleted_at = null;
-		$letter->save();
-
-		$response = [
-			"status" => "OK",
-			"msg" => "Letter created."
-		];
-		return response($response);
-	}
-
-	public function retrieve($id){
-		$letter = Letter::where('_id',$id)->first();
-
-		$response = $letter==null || $letter->deleted_at!=null ?
-		[
-			"status" => "ERROR",
-			"msg" => "Letter not found."
-		]:
-		[
-			"status" => "OK",
-			"data" => $letter->getAttributes()
-		];
-		return response($response);
-	}
-
-	public function update($id, Request $request){
-		$letter = Letter::where('_id',$id)->first();
-		foreach($this->fields as $field){
-			$letter->$field = $request->$field;
-		}
-		$letter->updated_at = Carbon::now();
-		$letter->save();
-
-		$response = [
-			"status" => "OK",
-			"msg" => "Letter updated."
-		];
-		return response($response);
-	}
-
-	public function delete($id, Request $request){
-		$letter = Letter::where('_id',$id)->first();
-		$letter->deleted_at = Carbon::now();
-		$letter->save();
-
-		$response = [
-			"status" => "OK",
-			"msg" => "Letter deleted."
-		];
-		return response($response);
-	}
-
-	public function getFields($id){
-    	$template = LetterTemplate::where('id',$id)->first();
-    	$file = new TemplateProcessor($template->path.'/temp1.docx');
-    	$data['vars'] = $file->getVariables();
-        $new_vars = array_diff($data['vars'],array("_now_date"));
-        $data['id'] = $id;
-        $data['vars'] = $new_vars;
-        $response = [
-            "status" => "OK",
-            "data" => [
-                "id" => $id,
-                "vars" => $vars
-            ]
-        ];
-    	return response($response);
-    }
 
     public function uploadLetter($id){
     	$dir = '/';
-	    $recursive = false; // Get subdirectories also?
+	    $recursive = false;
 	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
     	$letter = Letter::where('_id', $id)->first();
     	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
@@ -102,16 +31,16 @@ class LettersController extends Controller
 	    if (!$dir) {
 	        return 'User does not exist!';
 	    }
-    	$filename = 'dfasd.docx';
+    	$filename = $id.'.docx';
     	$localfile = Storage::disk('local')->get($path);
     	Storage::cloud()->put($dir['path'].'/'.$filename, $localfile);
-	    $recursive = false; // Get subdirectories also?
+	    $recursive = false;
 	    $contents = collect(Storage::cloud()->listContents($dir['path'], $recursive));
 	    $file = $contents
 	        ->where('type', '=', 'file')
 	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
         	->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
-	        ->first(); // there can be duplicate file names!
+	        ->first();
 	    // Change permissions
 	    // - https://developers.google.com/drive/v3/web/about-permissions
 	    // - https://developers.google.com/drive/v3/reference/permissions
@@ -120,7 +49,6 @@ class LettersController extends Controller
 		$permission->setRole('writer');
 	    $permission->setType('anyone');
 	    $permission->setAllowFileDiscovery(false);
-
 	    $rawLink = Storage::cloud()->url($file['basename']);
 	    $rawLink = parse_url($rawLink, PHP_URL_QUERY);
 	    $fileId = substr(explode('&',$rawLink)[0],3);
@@ -139,14 +67,14 @@ class LettersController extends Controller
     	$filename = $letter->name;
 
 	    $dir = '/';
-	    $recursive = false; // Get subdirectories also?
+	    $recursive = false;
 	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
 
 	    $file = $contents
 	        ->where('type', '=', 'file')
 	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
 	        ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
-	        ->first(); // there can be duplicate file names!
+	        ->first();
 
 	    //return $file; // array with file info
 
@@ -155,5 +83,71 @@ class LettersController extends Controller
 	    return response($rawData, 200)
 	        ->header('ContentType', $file['mimetype'])
 	        ->header('Content-Disposition', "attachment; filename='$filename'");
+    }
+
+    public function generate(Request $request,$id){
+        $uid = 1;
+        $vals = $request->request->all();
+        $lt = LetterTemplate::where('_id',$id)->first();
+        for($i=1 ; $i<=$lt->count;$i++){
+            $file = new TemplateProcessor('letter_template/'.$lt->name.'/temp'.$i.'.docx');
+            $vars = $file->getVariables();
+            $vars = array_diff($vars,array("_now_date"));
+            $form_data = [];
+            $keys=array_keys($vals);
+            $j=0;
+            foreach($vars as $var){
+                $s = str_replace(' ', '_', $var);
+                try {
+                	if(strpos($s, "datetime_") !== FALSE){
+	                    $form_data[$keys[$j]] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $vals[$s]));
+	                }
+	                else{
+	                    $form_data[$keys[$j]] = $vals[$s];
+	                }	
+                } catch (Exception $e) {
+                	
+                }
+                $j++;
+            }
+            $path = "users/".$uid."/temp/exam".$i.".docx";
+            $file->setValue($vars,$form_data);
+            $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
+            $file->setValue("_now_date",$now);
+            $file->saveAs($path);
+            //dd(Storage::disk('public')->getAdapter()->getPathPrefix());
+            $localfile = Storage::disk('public')->get('/'.$path);
+            Storage::disk('local')->put($path, $localfile);
+            Storage::disk('public')->delete($path);
+        }
+        $data['template'] = $lt;
+        $data['user'] = 'user1';
+        $data['id'] = $uid;
+        $response = [
+            "status" => "OK",
+            "data" => $data
+        ];
+        return response($response);
+    }
+
+    public function dateTimeToIndo($dt){
+        $mon = "";
+        $res = $dt->day." ";
+        switch($dt->month){
+            case 1: $mon = "Januari"; break;
+            case 2: $mon = "Februari"; break;
+            case 3: $mon = "Maret"; break;
+            case 4: $mon = "April"; break;
+            case 5: $mon = "Mei"; break;
+            case 6: $mon = "Juni"; break;
+            case 7: $mon = "Juli"; break;
+            case 8: $mon = "Agustus"; break;
+            case 9: $mon = "September"; break;
+            case 10: $mon = "Oktober"; break;
+            case 11: $mon = "November"; break;
+            case 12: $mon = "Desember"; break;
+        }
+        $res .= $mon." ".$dt->year;
+        return $res;
     }
 }
