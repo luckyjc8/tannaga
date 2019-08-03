@@ -24,6 +24,9 @@ class LettersController extends Controller
 	    $recursive = false;
 	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
     	$letter = Letter::where('_id', $id)->first();
+    	if($letter==null){
+    		return ["status"=>"ERROR","msg"=>"Letter does not exist."];
+    	}
     	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
     	$dir = $contents->where('type', '=', 'dir')
 	        ->where('filename', '=', "Test Dir")
@@ -87,6 +90,9 @@ class LettersController extends Controller
         $uid = 1;
         $vals = $request->request->all();
         $lt = LetterTemplate::where('_id',$id)->first();
+        if($lt==null){
+    		return ["status"=>"ERROR","msg"=>"Letter template does not exist."];
+    	}
         for($i=1 ; $i<=$lt->count;$i++){
             $file = new TemplateProcessor('letter_template/'.$lt->name.'/temp'.$i.'.docx');
             $vars = $file->getVariables();
