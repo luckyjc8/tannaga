@@ -11,6 +11,10 @@
 |
 */
 
+$router->get('/',function(){
+	return "<h1>You've reached Tannaga api... There's nothing to do here...</h1>";
+});
+
 $router->post('/register','UsersController@register');
 $router->post('/login', 'UsersController@login');
 $router->post('/logout', 'UsersController@logout');
