@@ -15,7 +15,7 @@
 //$app = require __DIR__.'/../bootstrap/app.php';
 
 //for uploading
-$app = require __DIR__.'/../lumen/bootstrap/app.php';
+$app = require __DIR__.'/../bootstrap/app.php';
 
 /*
 |--------------------------------------------------------------------------

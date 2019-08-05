@@ -23,8 +23,9 @@ class UsersController extends Controller
 		if (!$this->valid_email($request->email)){
 			return ["status"=> "ERROR", "msg" => "Email invalid"];
 		}
-		else if (User::where('email', $request->email) != null){
-			return ["status"=> "ERROR", "msg" => "Email already exist"];
+		else if (User::where('email', $request->email)->first() != null){
+			// dd(User::where('email', $request->email)->first());
+			return ["status"=> "ERROR", "msg" => "Email already exists"];
 		}
 		else if (strlen($request->password) < 8){
 			return ["status"=> "ERROR", "msg" => "Password invalid"];
