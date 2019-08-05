@@ -15,7 +15,7 @@ $router->post('/register','UsersController@register');
 $router->post('/login', 'UsersController@login');
 $router->post('/logout', 'UsersController@logout');
 
-$router->post('/activate/{id}/{token}', 'UsersController@activateAccount');
+$router->get('/activate/{id}/{token}', 'UsersController@activateAccount');
 $router->post('/forget', 'UsersController@forgetPassword');
 $router->post('/change/{id}/{token}', 'UsersController@changePassword');
 

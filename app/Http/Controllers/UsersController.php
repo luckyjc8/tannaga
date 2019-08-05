@@ -16,7 +16,19 @@ class UsersController extends Controller
 	protected $fields = ['name','email'];
 	//fields diisi semua field kecuali id & timestamps
 
+	public function valid_email($str) {
+		return (!preg_match("/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix", $str)) ? FALSE : TRUE;
+	}
 	public function register(Request $request){
+		if (!$this->valid_email($request->email)){
+			return ["status"=> "ERROR", "msg" => "Email invalid"];
+		}
+		else if (User::where('email', $request->email) != null){
+			return ["status"=> "ERROR", "msg" => "Email already exist"];
+		}
+		else if (strlen($request->password) < 8){
+			return ["status"=> "ERROR", "msg" => "Password invalid"];
+		}
 		$user = new User;
 		foreach($this->fields as $field){
 			$user->$field = $request->$field;
@@ -28,12 +40,11 @@ class UsersController extends Controller
 		$user->deleted_at = null;
 		$str = Str::random(60);
 		$user->activate_link = Hash::make($str);
-
 		$response = [
 			"status" => "OK",
 			"msg" => "User created."
 		];
-		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->id."/".$str));
+		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->_id."/".$str));
 		$user->save();
 		return response($response);
 	}
@@ -75,7 +86,7 @@ class UsersController extends Controller
 		else{
 			$str = Str::random(60);
 			$user->forgot_link = Hash::make($str);
-			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->id."/".$str));
+			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->_id."/".$str));
 			$response = [
 				"status" => "OK",
 				"msg" => "Password reset link sent to email."
