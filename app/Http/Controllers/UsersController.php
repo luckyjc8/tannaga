@@ -24,7 +24,6 @@ class UsersController extends Controller
 			return ["status"=> "ERROR", "msg" => "Email invalid"];
 		}
 		else if (User::where('email', $request->email)->first() != null){
-			// dd(User::where('email', $request->email)->first());
 			return ["status"=> "ERROR", "msg" => "Email already exists"];
 		}
 		else if (strlen($request->password) < 8){
@@ -45,8 +44,8 @@ class UsersController extends Controller
 			"status" => "OK",
 			"msg" => "User created."
 		];
-		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->_id."/".$str));
 		$user->save();
+		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->_id."/".$str));
 		return response($response);
 	}
 
