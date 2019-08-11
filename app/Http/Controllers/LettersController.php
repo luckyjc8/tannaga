@@ -20,31 +20,36 @@ class LettersController extends Controller
 	//fields diisi semua field kecuali id & timestamps
 
     public function uploadLetter($id){
-    	$dir = '/';
-	    $recursive = false;
-	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
-    	$letter = Letter::where('_id', $id)->first();
+    	//get letter file
+        $letter = Letter::where('_id', $id)->first();
     	if($letter==null){
     		return ["status"=>"ERROR","msg"=>"Letter does not exist."];
     	}
     	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
+    	$localfile = Storage::disk('local')->get($path);
+    	$filename = $id.'.docx';
+
+        //check dir user exist
+    	$dir = '/';
+	    $recursive = false;
+	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
     	$dir = $contents->where('type', '=', 'dir')
 	        ->where('filename', '=', "Test Dir")
 	        ->first();
 	    if (!$dir) {
-	        return 'User does not exist!';
+            return ["status"=>"ERROR","msg"=>"User does not exist."];
 	    }
-    	$filename = $id.'.docx';
-    	$localfile = Storage::disk('local')->get($path);
+
+        //put to drive, then get the file in drive
     	Storage::cloud()->put($dir['path'].'/'.$filename, $localfile);
-	    $recursive = false;
 	    $contents = collect(Storage::cloud()->listContents($dir['path'], $recursive));
 	    $file = $contents
 	        ->where('type', '=', 'file')
 	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
         	->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
 	        ->first();
-	    // Change permissions
+
+	    // Change permissions of that file
 	    // - https://developers.google.com/drive/v3/web/about-permissions
 	    // - https://developers.google.com/drive/v3/reference/permissions
 	    $service = Storage::cloud()->getAdapter()->getService();
@@ -52,6 +57,8 @@ class LettersController extends Controller
 		$permission->setRole('writer');
 	    $permission->setType('anyone');
 	    $permission->setAllowFileDiscovery(false);
+        
+        //get gdocs link
 	    $rawLink = Storage::cloud()->url($file['basename']);
 	    $rawLink = parse_url($rawLink, PHP_URL_QUERY);
 	    $fileId = substr(explode('&',$rawLink)[0],3);
@@ -86,9 +93,18 @@ class LettersController extends Controller
 	        ->header('Content-Disposition', "attachment; filename='$filename'");
     }
 
+    public function letterList(Request $request){
+        $letters = Letter::where('user_id', $request->header("user_id"))->get();
+        $response = [
+            "status" => "OK",
+            "data" => $letters
+        ];
+        return $response;
+    }
+
     public function generate(Request $request,$id){
-        $uid = 1;
-        $vals = $request->request->all();
+        $uid = $request->header("user_id");
+        $values = $request->request->all();
         $lt = LetterTemplate::where('_id',$id)->first();
         if($lt==null){
     		return ["status"=>"ERROR","msg"=>"Letter template does not exist."];
@@ -97,17 +113,20 @@ class LettersController extends Controller
             $file = new TemplateProcessor('letter_template/'.$lt->name.'/temp'.$i.'.docx');
             $vars = $file->getVariables();
             $vars = array_diff($vars,array("_now_date"));
+            if (count($values) !== count($vars)){
+                return ["status"=>"ERROR","msg"=>"Incomplete parameters."];
+            };
             $form_data = [];
-            $keys=array_keys($vals);
+            $keys=array_keys($values);
             $j=0;
             foreach($vars as $var){
                 $s = str_replace(' ', '_', $var);
                 try {
                 	if(strpos($s, "datetime_") !== FALSE){
-	                    $form_data[$keys[$j]] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $vals[$s]));
+	                    $form_data[$keys[$j]] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $values[$s]));
 	                }
 	                else{
-	                    $form_data[$keys[$j]] = $vals[$s];
+	                    $form_data[$keys[$j]] = $values[$s];
 	                }	
                 } catch (Exception $e) {
                 	

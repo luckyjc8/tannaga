@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Support\Facades\Hash;
 use App\User;
+use Illuminate\Support\Facades\Cookie;
 
 class Auth
 {
@@ -20,7 +21,7 @@ class Auth
         if ($request->header('user_id') == null){
             $response = [
                 'status' => "ERROR",
-                'msg' => "User not found."
+                'msg' => "user_id_null"
             ];
             return response($response); 
         }

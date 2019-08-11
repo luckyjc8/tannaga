@@ -11,18 +11,23 @@
 |
 */
 
-$router->get('/',function(){
-	return "<h1>You've reached Tannaga api... There's nothing to do here...</h1>";
+$router->group(['middleware'=>'auth'], function() use ($router){
+	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
+	$router->get('/test', function(){
+		dd('test');
+	});
+	$router->post('/generate/{id}','LettersController@generate');
+	$router->post('/logout', 'UsersController@logout');
+	$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
+	$router->get('/index_letter', "LettersController@letterList");
+});
+
+$router->get('/nani',function(){
+//	return "<h1>You've reached Tannaga api... There's nothing to do here...</h1>";
 });
 
 $router->post('/register','UsersController@register');
 $router->post('/login', 'UsersController@login');
-$router->post('/logout', 'UsersController@logout');
-
 $router->get('/activate/{id}/{token}', 'UsersController@activateAccount');
 $router->post('/forget', 'UsersController@forgetPassword');
 $router->post('/change/{id}/{token}', 'UsersController@changePassword');
-
-$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
-$router->post('/generate/{id}','LettersController@generate');
-$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
