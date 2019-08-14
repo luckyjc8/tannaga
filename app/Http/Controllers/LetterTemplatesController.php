@@ -7,6 +7,7 @@ use PhpOffice\PhpWord\PhpWord;
 use \PhpOffice\PhpWord\TemplateProcessor;
 use App\LetterTemplate;
 use Carbon\Carbon;
+use Storage;
 
 class LetterTemplatesController extends Controller{
 	public function getFields($id){
@@ -49,26 +50,16 @@ class LetterTemplatesController extends Controller{
         return $response;
     }
 
-    public function initTemplate(Request $request){
-        $lt = LetterTemplate::where('_id', $request->lt_id)->first();
+    public function initTemplate($lt_id){
+        $lt = LetterTemplate::where('_id', $lt_id)->first();
         $path = 'letter_template/Surat Kosong/empty.docx';
-        $localfile = Storage::disk('local')->get($path);
-        $filename = 'temp'.$lt->count+1.'.docx';
-
-        //check dir user exist
-        $dir = '/';
-        $recursive = false;
-        $contents = collect(Storage::cloud()->listContents($dir, $recursive));
-        $dir = $contents->where('type', '=', 'dir')
-            ->where('filename', '=', "Template dir")
-            ->first();
-        if (!$dir) {
-            return ["status"=>"ERROR","msg"=>"Dir does not exist."];
-        }
+        $localfile = Storage::disk('public')->get($path);
+        $filename = 'temp'.($lt->count+1).'.docx';
+        $filepath = env('GOOGLE_DRIVE_TEMPLATE_FOLDER_ID').'/'.$filename;
 
         //put to drive, then get the file in drive
-        Storage::cloud()->put($dir['path'].'/'.$filename, $localfile);
-        $contents = collect(Storage::cloud()->listContents($dir['path'], $recursive));
+        Storage::cloud()->put($filepath, $localfile);
+        $contents = collect(Storage::cloud()->listContents(env('GOOGLE_DRIVE_TEMPLATE_FOLDER_ID'), false));
         $file = $contents
             ->where('type', '=', 'file')
             ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
@@ -92,17 +83,21 @@ class LetterTemplatesController extends Controller{
         $response = [
             "status" => "OK",
             "msg" => "File uploaded.",
-            "link" => $realLink
+            "link" => $realLink,
+            "drive_link" => $file['path']
         ];
         $permissions = $service->permissions->create($file['basename'], $permission);
-        return Response($response);
+        return response($response);
     }
 
     public function finTemplate(Request $request){
-        $link = $request->link;
+        $link = $request->drive_link;
         $lt = LetterTemplate::where('_id', $request->lt_id)->first();
-        //just do save letter
         $lt->count++;
+        $lt->save();
+        $file = Storage::cloud()->get($link);
+        Storage::disk('public')->put('/letter_template/'.$lt->name.'/temp'.$lt->count.'.docx',$file);
+        return response(["status"=>"OK","msg"=>"Letter template added."]);
     }
     public function path($name){
     	return 'letter_template/'.$name.'/temp1.docx';

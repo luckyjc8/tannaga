@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailConfirm;
 use App\Mail\PasswordReset;
+use Illuminate\Support\Facades\Cookie;
 
 class UsersController extends Controller
 {
@@ -95,6 +96,23 @@ class UsersController extends Controller
 		return response($response);
 	}
 
+	public function checkChangePasswordToken($id,$token){
+		$user = User::where('_id',$id)->first();
+		if ($user==null || !Hash::check($token, $user->forgot_link)) {
+			$response =[
+				"status" => "ERROR",
+				"msg" => "User not found."
+			];
+		}
+		else{
+			$response=[
+				"status" => "OK",
+				"msg" => "Token valid."
+			];
+		}
+		return response($response);
+	}
+
 	public function changePassword($id, $token, Request $request){
 		$user = User::where('_id',$id)->first();
 		if ($user==null || !Hash::check($token, $user->forgot_link)) {
@@ -152,7 +170,9 @@ class UsersController extends Controller
 		}
 		else{
 			$user->access_token = null;
-			$user->remember_token = null;
+			if(Cookie::get('remember_token')!=null){
+				$user->remember_token = null;
+			}
 			$user->save();
 			$response = [
 				"status" => "OK",

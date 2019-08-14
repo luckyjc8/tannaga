@@ -27,22 +27,13 @@ class LettersController extends Controller
     	}
     	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
     	$localfile = Storage::disk('local')->get($path);
-    	$filename = $id.'.docx';
-
-        //check dir user exist
-    	$dir = '/';
+    	$filename = $id.'.docx';   
 	    $recursive = false;
-	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
-    	$dir = $contents->where('type', '=', 'dir')
-	        ->where('filename', '=', "Test Dir")
-	        ->first();
-	    if (!$dir) {
-            return ["status"=>"ERROR","msg"=>"User does not exist."];
-	    }
+	    $contents = collect(Storage::cloud()->listContents('/', $recursive));
 
         //put to drive, then get the file in drive
-    	Storage::cloud()->put($dir['path'].'/'.$filename, $localfile);
-	    $contents = collect(Storage::cloud()->listContents($dir['path'], $recursive));
+    	Storage::cloud()->put($filename, $localfile);
+	    $contents = collect(Storage::cloud()->listContents('/', $recursive));
 	    $file = $contents
 	        ->where('type', '=', 'file')
 	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
@@ -69,28 +60,34 @@ class LettersController extends Controller
 			"link" => $realLink
 		];
     	$permissions = $service->permissions->create($file['basename'], $permission);
-    	return Response($response);
+    	return response($response);
     }
 
     public function saveLetter($id){
     	$letter = Letter::where('_id', $id)->first();
-    	$filename = $letter->name;
+        if (!$letter) {
+            return response(["status"=>"ERROR","msg"=>"Letter does not exist."]);
+        }
+    	$filename = $id.'.docx';
 
-	    $dir = '/';
 	    $recursive = false;
-	    $contents = collect(Storage::cloud()->listContents($dir, $recursive));
-
-	    $file = $contents
-	        ->where('type', '=', 'file')
-	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
-	        ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
-	        ->first();
-
+        $contents = collect(Storage::cloud()->listContents('/', $recursive));
+        $file = $contents
+            ->where('type', '=', 'file')
+            ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
+            ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
+            ->first();
+        if (!$file) {
+            return response(["status"=>"ERROR","msg"=>"File does not exist."]);
+        }
 	    $rawData = Storage::cloud()->get($file['path']);
+        Storage::disk('local')->put('/letters/'.$letter->user_id.'/'.$filename,$rawData);
 
-	    return response($rawData, 200)
-	        ->header('ContentType', $file['mimetype'])
-	        ->header('Content-Disposition', "attachment; filename='$filename'");
+        $response = [
+            "status" => "OK",
+            "msg" => "Letter saved."
+        ];
+	    return response($response);
     }
 
     public function letterList(Request $request){
