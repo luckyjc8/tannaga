@@ -88,6 +88,7 @@ class UsersController extends Controller
 		else{
 			$str = Str::random(60);
 			$user->forgot_link = Hash::make($str);
+			$user->save();
 			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->_id."/".$str));
 			$response = [
 				"status" => "OK",
