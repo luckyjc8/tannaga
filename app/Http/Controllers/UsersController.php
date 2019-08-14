@@ -124,7 +124,7 @@ class UsersController extends Controller
 			];
 		}
 		else{
-			$user->password = $request->new_password;
+			$user->password = Hash::make($request->password);
 			$user->forgot_link = null;
 			$user->save();
 			$response = [
