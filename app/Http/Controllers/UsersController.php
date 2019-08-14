@@ -22,13 +22,13 @@ class UsersController extends Controller
 	}
 	public function register(Request $request){
 		if (!$this->valid_email($request->email)){
-			return ["status"=> "ERROR", "msg" => "Email invalid"];
+			return response(["status"=> "ERROR", "msg" => "Email invalid"]);
 		}
 		else if (User::where('email', $request->email)->first() != null){
-			return ["status"=> "ERROR", "msg" => "Email already exists"];
+			return response(["status"=> "ERROR", "msg" => "Email already exists"]);
 		}
 		else if (strlen($request->password) < 8){
-			return ["status"=> "ERROR", "msg" => "Password invalid"];
+			return response(["status"=> "ERROR", "msg" => "Password invalid"]);
 		}
 		$user = new User;
 		foreach($this->fields as $field){
@@ -122,6 +122,9 @@ class UsersController extends Controller
 				"status" => "ERROR",
 				"msg" => "User not found."
 			];
+		}
+		else if (strlen($request->password) < 8){
+			return response(["status"=> "ERROR", "msg" => "Password invalid"]);
 		}
 		else{
 			$user->password = Hash::make($request->password);
