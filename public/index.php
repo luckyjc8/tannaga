@@ -12,10 +12,10 @@
 */
 
 //for local testing
-//$app = require __DIR__.'/../bootstrap/app.php';
+$app = require __DIR__.'/../bootstrap/app.php';
 
 //for uploading
-$app = require __DIR__.'/../bootstrap/app.php';
+//$app = require __DIR__.'/bootstrap/app.php';
 
 /*
 |--------------------------------------------------------------------------
