@@ -12,10 +12,6 @@
 |
 */
 
-$router->get('/',function(){
-	return "<h1>You've reached Tannaga api... There's nothing to do here...</h1>";
-});
-
 //$router->group(['middleware'=>'admin'], function() use ($router){
 	$router->post('/create_template','LetterTemplatesController@create');
 	$router->post('/new_template/{lt_id}','LetterTemplatesController@initTemplate');
@@ -37,11 +33,3 @@ $router->get('/activate/{id}/{token}', 'UsersController@activateAccount');
 $router->post('/forget', 'UsersController@forgetPassword');
 $router->post('/change/{id}/{token}', 'UsersController@changePassword');
 $router->get('/check_cp_token/{id}/{token}','UsersController@checkChangePasswordToken');
-
-$router->get('/test',function(){
-	$contents = collect(Storage::cloud()->listContents('/', false));
-    $dir = $contents->where('type', '=', 'dir')
-        ->where('filename', '=', "Templates")
-        ->first();
-    dd($dir);
-});

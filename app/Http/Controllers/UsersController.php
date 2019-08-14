@@ -39,6 +39,7 @@ class UsersController extends Controller
 		$user->created_at = Carbon::now();
 		$user->updated_at = Carbon::now();
 		$user->deleted_at = null;
+		$user->forgot_link = null;
 		$str = Str::random(60);
 		$user->activate_link = Hash::make($str);
 		$response = [
