@@ -5,68 +5,31 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\LetterHeader;
 use Carbon\Carbon;
+use PhpOffice\PhpWord\PhpWord;
+use \PhpOffice\PhpWord\TemplateProcessor;
+use \PhpOffice\PhpWord\SimpleType\Jc;
+use Storage;
 
-class LetterHeadersController extends Controller
-{
-	protected $fields = ['path'];
-	//fields diisi semua field kecuali id & timestamps
 
-	public function create(Request $request){
-		$letterheader = new LetterHeader;
-		foreach($fields as $field){
-			$letterheader->$field = $request->$field;
-		}
-		$letterheader->created_at = Carbon::now();
-		$letterheader->updated_at = Carbon::now();
-		$letterheader->deleted_at = null;
-		$letterheader->save();
-
-		$response = [
-			"status" => "OK",
-			"msg" => "LetterHeader created."
-		];
-		return response($response);
-	}
-
-	public function retrieve($id){
-		$letterheader = LetterHeader::where('_id',$id)->first();
-
-		$response = $letterheader==null ?
-		[
-			"status" => "ERROR",
-			"msg" => "LetterHeader not found."
-		]:
-		[
-			"status" => "OK",
-			"data" => $letterheader->getAttributes()
-		];
-		return response($response);
-	}
-
-	public function update($id, Request $request){
-		$letterheader = LetterHeader::where('_id',$id)->first();
-		foreach($fields as $field){
-			$letterheader->$field = $request->$field;
-		}
-		$letterheader->updated_at = Carbon::now();
-		$letterheader->save();
-
-		$response = [
-			"status" => "OK",
-			"msg" => "LetterHeader updated."
-		];
-		return response($response);
-	}
-
-	public function delete($id, Request $request){
-		$letterheader = LetterHeader::where('_id',$id)->first();
-		$letterheader->deleted_at = Carbon::now();
-		$letterheader->save();
-
-		$response = [
-			"status" => "OK",
-			"msg" => "LetterHeader deleted."
-		];
-		return response($response);
-	}
+class LetterHeadersController extends Controller{
+	public function generate($text){
+		$fileName = 'letter_template/Surat Pengunduran Diri/temp1.docx';
+		$phpWord = \PhpOffice\PhpWord\IOFactory::load($fileName);
+		$sections = $phpWord->getSections();
+		$section = $sections[0];
+		//$arrays = $section->getElements();
+		$header = $section->addHeader();
+		$header->firstPage();
+		$table = $header->addTable();
+		$table->addRow();
+		$cell = $table->addCell(4000);
+		$textrun = $cell->addTextRun();
+		$textrun->addText($text);
+		//$textrun->addLink('https://github.com/PHPOffice/PHPWord', 'PHPWord on GitHub');
+		$table->addCell(1000)->addImage(
+			'../resources/kaguya.png', array('width' => 80, 'height' => 80, 'alignment' => Jc::END));
+        //$path = 'test.docx';
+		//$targetFile = Storage::disk('public')->get('/'.$path);
+        $phpWord->save('test.docx');
+    }
 }
