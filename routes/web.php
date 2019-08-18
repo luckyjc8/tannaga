@@ -34,4 +34,4 @@ $router->post('/forget', 'UsersController@forgetPassword');
 $router->post('/change/{id}/{token}', 'UsersController@changePassword');
 $router->get('/check_cp_token/{id}/{token}','UsersController@checkChangePasswordToken');
 
-$router->get('/test/{text}', 'LetterHeadersController@generate');
+$router->post('/test', 'LetterHeadersController@generate');

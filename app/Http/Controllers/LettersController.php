@@ -20,7 +20,7 @@ class LettersController extends Controller
 	//fields diisi semua field kecuali id & timestamps
 
     public function uploadLetter($id){
-    	//get letter file
+    	//get letter file, upload to drive
         $letter = Letter::where('_id', $id)->first();
     	if($letter==null){
     		return ["status"=>"ERROR","msg"=>"Letter does not exist."];
@@ -28,12 +28,10 @@ class LettersController extends Controller
     	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
     	$localfile = Storage::disk('local')->get($path);
     	$filename = $id.'.docx';   
-	    $recursive = false;
-	    $contents = collect(Storage::cloud()->listContents('/', $recursive));
-
-        //put to drive, then get the file in drive
     	Storage::cloud()->put($filename, $localfile);
-	    $contents = collect(Storage::cloud()->listContents('/', $recursive));
+
+        //get uploaded file from drive
+	    $contents = collect(Storage::cloud()->listContents('/', false));
 	    $file = $contents
 	        ->where('type', '=', 'file')
 	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
