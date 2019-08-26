@@ -100,7 +100,7 @@ class UsersController extends Controller
 
 	public function checkChangePasswordToken($id,$token){
 		$user = User::where('_id',$id)->first();
-		if ($user==null || ) {
+		if ($user==null) {
 			$response =[
 				"status" => "ERROR",
 				"msg" => "User not found."
