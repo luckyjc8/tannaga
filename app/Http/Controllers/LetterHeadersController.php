@@ -28,6 +28,7 @@ class LetterHeadersController extends Controller{
     	$text = $request->text;
     	$text2 = $request->text2;
     	$imagePath = '../resources/kaguya.png';
+    	$imageSource = file_get_contents($imagePath);
     	$path = 'letter_template/Surat Pengunduran Diri/temp1.docx';
 
 		$phpWord = \PhpOffice\PhpWord\IOFactory::load($path);
@@ -56,7 +57,7 @@ class LetterHeadersController extends Controller{
 		$header->firstPage();
 		$table = $header->addTable();
 		$table->addRow();
-		$table->addCell(2500)->addImage($imagePath, array('width'=>80, 'height'=>80, 'alignment'=>Jc::START));
+		$table->addCell(2500)->addImage($imageSource, array('width'=>80, 'height'=>80, 'alignment'=>Jc::START));
 		$textrun = $table->addCell(7500)->addTextRun($paragraphStyle);
 		$textrun->addText($text, $fontStyle1);
 		$textrun->addTextBreak(2);
@@ -78,5 +79,15 @@ class LetterHeadersController extends Controller{
         ];
 
 	    return response($response);
+    }
+
+    public function test(){
+    	$file = Storage::disk('public')->get('test.docx');
+    	Storage::disk('public')->put('test2.docx', $file);
+    	$phpWord = new TemplateProcessor('test2.docx');
+    	//$sections = $phpWord->getSections();
+    	//$section = $sections[0];
+    	$phpWord->saveAs('test3.docx');
+    	return 'test';
     }
 }
