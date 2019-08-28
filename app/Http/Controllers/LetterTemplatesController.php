@@ -24,6 +24,9 @@ class LetterTemplatesController extends Controller{
 	    	$fields = $file->getVariables();
 	    	unset($fields[array_keys($fields,'_now_date','strict')[0]]);
 	    	$data['vars'] = array_values($fields);
+            foreach ($data['vars'] as $vars) {
+                # code...
+            }
 	        $response = [
 	            "status" => "OK",
 	            "data" => $data
