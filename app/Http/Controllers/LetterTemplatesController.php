@@ -23,13 +23,41 @@ class LetterTemplatesController extends Controller{
 	        $data['id'] = $id;
 	    	$fields = $file->getVariables();
 	    	unset($fields[array_keys($fields,'_now_date','strict')[0]]);
-	    	$data['vars'] = array_values($fields);
-            foreach ($data['vars'] as $vars) {
-                # code...
+            $vars = [];
+	    	foreach(array_values($fields) as $field){
+                $temp = explode('_',$field);
+                if(count($temp) == 1){
+                    $vars[] = [
+                        "name" => $temp[0]
+                    ];
+                }
+                else if(count($temp)==2 && $temp[0]=='datetime'){
+                    $vars[] = [
+                        "datetime" => true,
+                        "name" => $temp[0]
+                    ];
+                }
+                else if(count($temp)==2){
+                    $vars[] = [
+                        "name" => $temp[0],
+                        "desc" => $temp[1]
+                    ];
+                }
+                else if(count($temp)==3){
+                    $vars[] = [
+                        "datetime" => true,
+                        "name" => $temp[1],
+                        "desc" => $temp[2]
+                    ];
+                }
+                else{
+                    return response(["status"=>"ERROR","msg"=>"Invalid document."]);
+                }
             }
+            $data['vars'] = $vars;
 	        $response = [
-	            "status" => "OK",
-	            "data" => $data
+	            "data" => $data,
+                "status" => "OK",
 	        ];
     	}
     	return response($response);
