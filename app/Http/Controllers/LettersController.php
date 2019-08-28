@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 use App\Letter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\LetterSender;
 use Storage;
 use \Exception;
 use PhpOffice\PhpWord\PhpWord;
@@ -190,11 +192,13 @@ class LettersController extends Controller
     }
 
     public function emailLetter(Request $request){
+        $path = Letter::where('_id',$request->letter_id)->first()->path;
         if($request->myself != null){
-            //send email to myself
+            $user = User::where('_id', $request->header('user_id'))->first();
+            Mail::to($user->email)->send(new LetterSender($path));
         }
         else{
-            //send email to foreach $request->recipient
+            Mail::to($request->recipient)->send(new LetterSender($path));
         }
     }
 
