@@ -13,7 +13,6 @@ use PhpOffice\PhpWord\PhpWord;
 use \PhpOffice\PhpWord\TemplateProcessor;
 use App\LetterTemplate;
 
-
 class LettersController extends Controller
 {
 	//protected $fields = ['letter-template-id', 'attrs', 'path'];
@@ -97,6 +96,10 @@ class LettersController extends Controller
         return $response;
     }
 
+    public function preview($id,$name){
+        return Storage::disk('public')->get('/temp_letters/'.$id.'/'.$name);
+    }
+
     public function generate(Request $request,$id){
         $uid = $request->header("user_id");
         $values = $request->request->all();
@@ -104,45 +107,63 @@ class LettersController extends Controller
         if($lt==null){
     		return ["status"=>"ERROR","msg"=>"Letter template does not exist."];
     	}
+        $files = [];
+        Storage::disk('public')->deleteDirectory('temp_letters/'.$uid);
+        Storage::disk('public')->makeDirectory('temp_letters/'.$uid);
         for($i=1 ; $i<=$lt->count;$i++){
             $file = new TemplateProcessor('letter_template/'.$lt->name.'/temp'.$i.'.docx');
             $vars = $file->getVariables();
             $vars = array_diff($vars,array("_now_date"));
-            if (count($values) !== count($vars)){
+            if (count($values) < count($vars)){
                 return ["status"=>"ERROR","msg"=>"Incomplete parameters."];
             };
-            $form_data = [];
             $keys=array_keys($values);
-            $j=0;
-            foreach($vars as $var){
-                $s = str_replace(' ', '_', $var);
-                try {
-                	if(strpos($s, "datetime_") !== FALSE){
-	                    $form_data[$keys[$j]] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $values[$s]));
-	                }
-	                else{
-	                    $form_data[$keys[$j]] = $values[$s];
-	                }	
-                } catch (Exception $e) {
-                	
+            $temp=[];
+            foreach($values as $val){
+                try{   
+                    $val = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $val));
                 }
-                $j++;
+                catch(Exception $e){
+                }
+                $temp[] = $val;
             }
-            $path = "users/".$uid."/temp/exam".$i.".docx";
-            $file->setValue($vars,$form_data);
+            $values=$temp;
+            $path = "temp_letters/".$uid."/exam".$i.".docx";
+            $file->setValue($vars,$values);
             $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
             $file->setValue("_now_date",$now);
             $file->saveAs($path);
             $localfile = Storage::disk('public')->get('/'.$path);
-            Storage::disk('local')->put($path, $localfile);
-            Storage::disk('public')->delete($path);
+            Storage::disk('public')->put($path, $localfile);
+            $files[] = 'api.tannaga.com/preview/'.$uid.'/exam'.$i.'.docx';
         }
         $data['template'] = $lt;
-        $data['user'] = 'user1';
         $data['id'] = $uid;
+        $data['files'] = $files;
         $response = [
             "status" => "OK",
             "data" => $data
+        ];
+        return response($response);
+    }
+
+    public function finalize(Request $request){
+        $public_path = 'temp_letters/'.$request->header('user_id').'/exam'.$request->n.'.docx';
+        $storage_path = '/letters/'.$request->header('user_id').'/'.$request->filename.'.docx';
+        $file = Storage::disk('public')->get($public_path);
+        if($file==null){
+            return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
+        }
+        Storage::disk('local')->put($storage_path,$file);
+        $letter = new Letter;
+        $letter->user_id = $request->header('user_id');
+        $letter->filename = $request->filename;
+        $letter->path = $storage_path;
+        $letter->save();
+        $response = [
+            "status" => "OK",
+            "msg" => "Finalize success",
+            "letter" => $letter->_id
         ];
         return response($response);
     }
@@ -166,5 +187,18 @@ class LettersController extends Controller
         }
         $res .= $mon." ".$dt->year;
         return $res;
+    }
+
+    public function emailLetter(Request $request){
+        if($request->myself != null){
+            //send email to myself
+        }
+        else{
+            //send email to foreach $request->recipient
+        }
+    }
+
+    public function downloadLetter(Request $request){
+        return Storage::disk('local')->get(Letter::where('_id',$request->letter_id)->first()->path);
     }
 }

@@ -1,6 +1,5 @@
 <?php
 
-
 /*
 |--------------------------------------------------------------------------
 | Application Routes
@@ -19,12 +18,14 @@
 //});
 
 //$router->group(['middleware'=>'auth'], function() use ($router){
+	$router->post('/logout', 'UsersController@logout');
 	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
 	$router->post('/generate/{id}','LettersController@generate');
-	$router->post('/logout', 'UsersController@logout');
+	$router->post('/finalize','LettersController@finalize');
 	$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
 	$router->get('/save_letter/{id}',"LettersController@saveLetter");
 	$router->get('/index_letter', "LettersController@letterList");
+	$router->get('/preview_letter/{id}/{filename}','LettersController@preview');
 //});
 
 $router->post('/register','UsersController@register');
@@ -33,5 +34,3 @@ $router->get('/activate/{id}/{token}', 'UsersController@activateAccount');
 $router->post('/forget', 'UsersController@forgetPassword');
 $router->post('/change/{id}/{token}', 'UsersController@changePassword');
 $router->get('/check_cp_token/{id}/{token}','UsersController@checkChangePasswordToken');
-
-$router->get('/test', 'LetterHeadersController@test');
