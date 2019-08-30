@@ -25,7 +25,7 @@
 	$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
 	$router->get('/save_letter/{id}',"LettersController@saveLetter");
 	$router->get('/index_letter', "LettersController@letterList");
-	$router->get('/preview_letter/{id}/{filename}','LettersController@preview');
+	$router->get('/preview/{id}/{filename}','LettersController@preview');
 	$router->get('/download_letter','LettersController@downloadLetter');
 //});
 
