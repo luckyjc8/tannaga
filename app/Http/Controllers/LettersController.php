@@ -209,7 +209,11 @@ class LettersController extends Controller
             return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
         }
         else{
-            return redirect('api.tannaga.com/storage/'.$letter->path);
+            $letter_file = Storage::disk('local')->get($letter->path);
+            Storage::disk('public')->deleteDirectory('letters/'.$letter->user_id);
+            Storage::disk('public')->makeDirectory('letters/'.$letter->user_id);
+            Storage::disk('public')->put($letter->path, $letter_file);
+            return redirect('api.tannaga.com/public/'.$letter->path);
         }
     }
 }
