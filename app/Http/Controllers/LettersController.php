@@ -7,8 +7,6 @@ use Illuminate\Support\Str;
 use App\Letter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\LetterSender;
 use Storage;
 use \Exception;
 use PhpOffice\PhpWord\PhpWord;
@@ -151,7 +149,7 @@ class LettersController extends Controller
 
     public function finalize(Request $request){
         $public_path = 'temp_letters/'.$request->header('user_id').'/exam'.$request->n.'.docx';
-        $storage_path = '/letters/'.$request->header('user_id').'/'.$request->filename.'.docx';
+        $storage_path = 'letters/'.$request->header('user_id').'/'.$request->filename.'.docx';
         $file = Storage::disk('public')->get($public_path);
         if($file==null){
             return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
@@ -190,7 +188,7 @@ class LettersController extends Controller
         $res .= $mon." ".$dt->year;
         return $res;
     }
-
+    
     public function emailLetter(Request $request){
         $path = Letter::where('_id',$request->letter_id)->first()->path;
         if($request->myself != null){
@@ -203,6 +201,16 @@ class LettersController extends Controller
     }
 
     public function downloadLetter(Request $request){
-        return Storage::disk('local')->get(Letter::where('_id',$request->letter_id)->first()->path);
+        $letter = Letter::where('_id',$request->letter_id)->first();
+        if($letter==null){
+            return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
+        }
+        else if($request->header('user_id')!=$letter->user_id){
+            return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
+        }
+        else{
+            $url = Storage::disk('local')->url($letter->path);
+            return Storage::
+        }
     }
 }
