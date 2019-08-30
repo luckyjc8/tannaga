@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Storage;
 
 class LetterTemplatesController extends Controller{
-	public function getFields($id){
+	public function getFields($id, $i=1){
     	$template = LetterTemplate::where('_id',$id)->first();
     	if($template == null){
     		$response = [
@@ -19,35 +19,21 @@ class LetterTemplatesController extends Controller{
     		];
     	}
     	else{
-    		$file = new TemplateProcessor($this->path($template->name));
+    		$file = new TemplateProcessor($this->path($template->name,$i));
 	        $data['id'] = $id;
 	    	$fields = $file->getVariables();
-	    	unset($fields[array_keys($fields,'_now_date','strict')[0]]);
+	    	if(in_array('_now_date',$fields)){
+                unset($fields[array_keys($fields,'_now_date','strict')[0]]);
+            }
             $vars = [];
 	    	foreach(array_values($fields) as $field){
                 $temp = explode('_',$field);
-                if(count($temp) == 1){
+
+                if(count($temp) == 3){
                     $vars[] = [
-                        "name" => $temp[0]
-                    ];
-                }
-                else if(count($temp)==2 && $temp[0]=='datetime'){
-                    $vars[] = [
-                        "datetime" => true,
-                        "name" => $temp[0]
-                    ];
-                }
-                else if(count($temp)==2){
-                    $vars[] = [
-                        "name" => $temp[0],
-                        "desc" => $temp[1]
-                    ];
-                }
-                else if(count($temp)==3){
-                    $vars[] = [
-                        "datetime" => true,
+                        "type" => $temp[0],
                         "name" => $temp[1],
-                        "desc" => $temp[2]
+                        "desc" => $temp[2] == 'nulldesc' ? null : $temp[2],
                     ];
                 }
                 else{
@@ -130,7 +116,51 @@ class LetterTemplatesController extends Controller{
         Storage::disk('public')->put('/letter_template/'.$lt->name.'/temp'.$lt->count.'.docx',$file);
         return response(["status"=>"OK","msg"=>"Letter template added."]);
     }
-    public function path($name){
-    	return 'letter_template/'.$name.'/temp1.docx';
+    public function path($name,$i){
+    	return 'letter_template/'.$name.'/temp'.$i.'.docx';
+    }
+
+    public function checkDocsValidity(){
+        $res = json_decode($this->checkDocsValidityVerbose()->getContent());
+        $problem = [];
+        foreach($res->data as $k=>$r){
+            if($r->original->status != "OK"){
+                $problem[] = $k;
+            }
+        }
+        if(count($problem)){
+            $response = [
+                "status" => "ERROR",
+                "errors" => $problem
+            ];
+            return response($response);
+        }
+        else{
+            return response(["status"=>"OK","msg"=>"All documents valid"]);
+        }
+        
+    }
+
+    public function checkDocsValidityVerbose($lt_name = null){
+        $res = [];
+        if($lt_name !=null){
+            $lt = LetterTemplate::where('name',$lt_name)->first();
+            for($i=1;$i<=$lt->count;$i++){
+                $res[$lt_name.'_'.$i] = $this->getFields($lt->_id,$i);
+            }
+        }
+        else{
+            $lts = LetterTemplate::all();
+            foreach($lts as $lt){
+                for($i=1;$i<=$lt->count;$i++){
+                    $res[$lt->name.'_'.$i] = $this->getFields($lt->_id,$i);
+                }
+            }
+        }
+        $response = [
+            "status" => "OK",
+            "data" => $res
+        ];
+        return response($response);
     }
 }
