@@ -188,7 +188,7 @@ class LettersController extends Controller
         $res .= $mon." ".$dt->year;
         return $res;
     }
-    
+
     public function emailLetter(Request $request){
         $path = Letter::where('_id',$request->letter_id)->first()->path;
         if($request->myself != null){
@@ -209,8 +209,7 @@ class LettersController extends Controller
             return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
         }
         else{
-            $url = Storage::disk('local')->url($letter->path);
-            return Storage::
+            return redirect('api.tannaga.com/storage/'.$letter->path);
         }
     }
 }
