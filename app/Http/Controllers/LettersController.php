@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use App\Letter;
-use App\User;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\File;
 use Storage;
 use \Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use App\User;
+use App\Letter;
+use App\LetterTemplate;
+use App\Mail\LetterSender;
 use PhpOffice\PhpWord\PhpWord;
 use \PhpOffice\PhpWord\TemplateProcessor;
-use App\LetterTemplate;
 
 class LettersController extends Controller
 {
@@ -195,9 +197,19 @@ class LettersController extends Controller
         if($request->myself != null){
             $user = User::where('_id', $request->header('user_id'))->first();
             Mail::to($user->email)->send(new LetterSender($path));
+            $response = [
+                "status" => "OK",
+                "msg" => "Letter sent",
+            ];
+            return response($response);
         }
         else{
             Mail::to($request->recipient)->send(new LetterSender($path));
+            $response = [
+                "status" => "OK",
+                "msg" => "Letter sent",
+            ];
+            return response($response);
         }
     }
 
