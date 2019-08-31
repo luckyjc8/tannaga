@@ -261,5 +261,10 @@ class LettersController extends Controller
         Storage::disk('public')->deleteDirectory('letters');
         Storage::disk('public')->deleteDirectory('temp_letters');
         Storage::disk('local')->deleteDirectory('letters');
+        $response = [
+            "status" => "OK",
+            "msg" => "Cleaned"
+        ];
+        return response($response);
     }
 }
