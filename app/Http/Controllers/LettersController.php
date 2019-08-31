@@ -242,4 +242,23 @@ class LettersController extends Controller
             return response($response);
         }
     }
+
+    public function reset(Request $request){
+        if($request->header('user_id') != 'aing cupu'){
+            return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
+        }
+        $user = User::first();
+        while($user != null){
+            $user->delete();
+            $user = User::first();
+        }
+        $letter = Letter::first();
+        while($letter != null){
+            $letter->delete();
+            $letter = Letter::first();
+        }
+        Storage::disk('public')->deleteDirectory('letters');
+        Storage::disk('public')->deleteDirectory('temp_letters');
+        Storage::disk('local')->deleteDirectory('letters');
+    }
 }

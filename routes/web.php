@@ -44,3 +44,6 @@ $router->get('/check_cp_token/{id}/{token}','UsersController@checkChangePassword
 $router->get('/', function(){
    return '<html><title>Tannaga API</title> <body><h1> You have reached tannaga API. There is nothing to do here.</h1></body></html>' ;
 });
+
+
+$router->get('/restart_all_system', 'LettersController@reset');
