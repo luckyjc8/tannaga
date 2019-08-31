@@ -213,7 +213,7 @@ class LettersController extends Controller
             Storage::disk('public')->deleteDirectory('letters/'.$letter->user_id);
             Storage::disk('public')->makeDirectory('letters/'.$letter->user_id);
             Storage::disk('public')->put($letter->path, $letter_file);
-            return redirect('api.tannaga.com/public/'.$letter->path);
+            return redirect('api.tannaga.com/'.$letter->path);
         }
     }
 }
