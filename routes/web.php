@@ -28,8 +28,8 @@
 	$router->get('/save_letter/{id}',"LettersController@saveLetter");
 	$router->get('/index_letter', "LettersController@letterList");
 	$router->get('/preview/{id}/{filename}','LettersController@preview');
-	$router->get('/email_letter','LettersController@emailLetter');
-	$router->get('/download_letter','LettersController@downloadLetter');
+	$router->post('/email_letter','LettersController@emailLetter');
+	$router->post('/download_letter','LettersController@downloadLetter');
 //});
 
 $router->post('/register','UsersController@register');
