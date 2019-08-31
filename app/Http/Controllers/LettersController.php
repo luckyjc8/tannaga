@@ -130,7 +130,8 @@ class LettersController extends Controller
             }
             $path = "temp_letters/".$uid."/exam".$i.".docx";
             foreach ($vars as $var) {
-                $file->setValue($var, $values($var));
+                $nm = explode('_',$var)[1];
+                $file->setValue($var, $values[$nm]);
             }
             $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
             $file->setValue("_now_date",$now);

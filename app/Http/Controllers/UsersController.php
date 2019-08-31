@@ -59,6 +59,12 @@ class UsersController extends Controller
 				"msg" => "User not found."
 			];
 		}
+		else if ($user->is_activated){
+			$response = [
+				"status" => "OK",
+				"msg" => "User already activated."
+			];
+		}
 		else if (!Hash::check($token, $user->activate_link)){
 			$response =[
 				"status" => "ERROR",
