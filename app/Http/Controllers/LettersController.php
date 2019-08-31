@@ -206,7 +206,7 @@ class LettersController extends Controller
             Mail::to($request->recipient)->send(new LetterSender($path));
             $response = [
                 "status" => "OK",
-                "msg" => "Letter sent",
+                "msg" => "Letter sent"
             ];
             return response($response);
         }
@@ -225,7 +225,11 @@ class LettersController extends Controller
             Storage::disk('public')->deleteDirectory('letters/'.$letter->user_id);
             Storage::disk('public')->makeDirectory('letters/'.$letter->user_id);
             Storage::disk('public')->put($letter->path, $letter_file);
-            return redirect('api.tannaga.com/'.$letter->path);
+            $response = [
+                "status" => "OK",
+                "link" => 'api.tannaga.com/'.$letter->path
+            ];
+            return response($response);
         }
     }
 }
