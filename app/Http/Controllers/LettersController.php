@@ -151,7 +151,12 @@ class LettersController extends Controller
 
     public function finalize(Request $request){
         $public_path = 'temp_letters/'.$request->header('user_id').'/exam'.$request->n.'.docx';
-        $storage_path = 'letters/'.$request->header('user_id').'/'.$request->filename.'.docx';
+        if($request->filename == null){
+            $storage_path = 'letters/'.$request->header('user_id').'/file.docx';
+        }
+        else{
+            $storage_path = 'letters/'.$request->header('user_id').'/'.$request->filename.'.docx';
+        }
         $file = Storage::disk('public')->get($public_path);
         if($file==null){
             return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
@@ -159,7 +164,12 @@ class LettersController extends Controller
         Storage::disk('local')->put($storage_path,$file);
         $letter = new Letter;
         $letter->user_id = $request->header('user_id');
-        $letter->filename = $request->filename;
+        if($request->filename == null){
+            $letter->filename = 'file';
+        }
+        else{
+            $letter->filename = $request->filename;
+        }
         $letter->path = $storage_path;
         $letter->save();
         $response = [
