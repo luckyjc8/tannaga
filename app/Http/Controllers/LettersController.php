@@ -121,18 +121,17 @@ class LettersController extends Controller
                 return ["status"=>"ERROR","msg"=>"Incomplete parameters."];
             };
             $keys=array_keys($values);
-            $temp=[];
-            foreach($values as $val){
+            foreach($values as $k => $val){
                 try{   
-                    $val = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $val));
+                    $values[$k] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $val));
                 }
                 catch(Exception $e){
                 }
-                $temp[] = $val;
             }
-            $values=$temp;
             $path = "temp_letters/".$uid."/exam".$i.".docx";
-            $file->setValue($vars,$values);
+            foreach ($vars as $var) {
+                $file->setValue($var, $values($var));
+            }
             $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
             $file->setValue("_now_date",$now);
             $file->saveAs($path);
