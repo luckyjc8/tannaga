@@ -18,59 +18,59 @@ use \PhpOffice\PhpWord\TemplateProcessor;
 
 class LettersController extends Controller
 {
-	//protected $fields = ['letter-template-id', 'attrs', 'path'];
-	//fields diisi semua field kecuali id & timestamps
+    //protected $fields = ['letter-template-id', 'attrs', 'path'];
+    //fields diisi semua field kecuali id & timestamps
 
     public function uploadLetter($id){
-    	//get letter file, upload to drive
+        //get letter file, upload to drive
         $letter = Letter::where('_id', $id)->first();
-    	if($letter==null){
-    		return ["status"=>"ERROR","msg"=>"Letter does not exist."];
-    	}
-    	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
-    	$localfile = Storage::disk('local')->get($path);
-    	$filename = $id.'.docx';   
-    	Storage::cloud()->put($filename, $localfile);
+        if($letter==null){
+            return ["status"=>"ERROR","msg"=>"Letter does not exist."];
+        }
+        $path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
+        $localfile = Storage::disk('local')->get($path);
+        $filename = $id.'.docx';   
+        Storage::cloud()->put($filename, $localfile);
 
         //get uploaded file from drive
-	    $contents = collect(Storage::cloud()->listContents('/', false));
-	    $file = $contents
-	        ->where('type', '=', 'file')
-	        ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
-        	->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
-	        ->first();
+        $contents = collect(Storage::cloud()->listContents('/', false));
+        $file = $contents
+            ->where('type', '=', 'file')
+            ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
+            ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
+            ->first();
 
-	    // Change permissions of that file
-	    // - https://developers.google.com/drive/v3/web/about-permissions
-	    // - https://developers.google.com/drive/v3/reference/permissions
-	    $service = Storage::cloud()->getAdapter()->getService();
-	    $permission = new \Google_Service_Drive_Permission();
-		$permission->setRole('writer');
-	    $permission->setType('anyone');
-	    $permission->setAllowFileDiscovery(false);
+        // Change permissions of that file
+        // - https://developers.google.com/drive/v3/web/about-permissions
+        // - https://developers.google.com/drive/v3/reference/permissions
+        $service = Storage::cloud()->getAdapter()->getService();
+        $permission = new \Google_Service_Drive_Permission();
+        $permission->setRole('writer');
+        $permission->setType('anyone');
+        $permission->setAllowFileDiscovery(false);
         
         //get gdocs link
-	    $rawLink = Storage::cloud()->url($file['basename']);
-	    $rawLink = parse_url($rawLink, PHP_URL_QUERY);
-	    $fileId = substr(explode('&',$rawLink)[0],3);
-	    $realLink = "https://docs.google.com/document/d/".$fileId."/edit";
-    	$response = [
-			"status" => "OK",
-			"msg" => "File uploaded.",
-			"link" => $realLink
-		];
-    	$permissions = $service->permissions->create($file['basename'], $permission);
-    	return response($response);
+        $rawLink = Storage::cloud()->url($file['basename']);
+        $rawLink = parse_url($rawLink, PHP_URL_QUERY);
+        $fileId = substr(explode('&',$rawLink)[0],3);
+        $realLink = "https://docs.google.com/document/d/".$fileId."/edit";
+        $response = [
+            "status" => "OK",
+            "msg" => "File uploaded.",
+            "link" => $realLink
+        ];
+        $permissions = $service->permissions->create($file['basename'], $permission);
+        return response($response);
     }
 
     public function saveLetter($id){
-    	$letter = Letter::where('_id', $id)->first();
+        $letter = Letter::where('_id', $id)->first();
         if (!$letter) {
             return response(["status"=>"ERROR","msg"=>"Letter does not exist."]);
         }
-    	$filename = $id.'.docx';
+        $filename = $id.'.docx';
 
-	    $recursive = false;
+        $recursive = false;
         $contents = collect(Storage::cloud()->listContents('/', $recursive));
         $file = $contents
             ->where('type', '=', 'file')
@@ -80,14 +80,14 @@ class LettersController extends Controller
         if (!$file) {
             return response(["status"=>"ERROR","msg"=>"File does not exist."]);
         }
-	    $rawData = Storage::cloud()->get($file['path']);
+        $rawData = Storage::cloud()->get($file['path']);
         Storage::disk('local')->put('/letters/'.$letter->user_id.'/'.$filename,$rawData);
 
         $response = [
             "status" => "OK",
             "msg" => "Letter saved."
         ];
-	    return response($response);
+        return response($response);
     }
 
     public function letterList(Request $request){
@@ -108,8 +108,8 @@ class LettersController extends Controller
         $values = $request->request->all();
         $lt = LetterTemplate::where('_id',$id)->first();
         if($lt==null){
-    		return ["status"=>"ERROR","msg"=>"Letter template does not exist."];
-    	}
+            return ["status"=>"ERROR","msg"=>"Letter template does not exist."];
+        }
         $files = [];
         Storage::disk('public')->deleteDirectory('temp_letters/'.$uid);
         Storage::disk('public')->makeDirectory('temp_letters/'.$uid);
@@ -130,7 +130,9 @@ class LettersController extends Controller
             }
             $path = "temp_letters/".$uid."/exam".$i.".docx";
             foreach ($vars as $var) {
-                $file->setValue($var, $values($var));
+                $nm = explode('_',$var)[1];
+                $nm = str_replace(' ','_',$nm);
+                $file->setValue($var, $values[$nm]);
             }
             $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
             $file->setValue("_now_date",$now);
