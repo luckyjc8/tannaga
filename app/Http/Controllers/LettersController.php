@@ -27,8 +27,7 @@ class LettersController extends Controller
         if($letter==null){
             return ["status"=>"ERROR","msg"=>"Letter does not exist."];
         }
-        $path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
-        $localfile = Storage::disk('local')->get($path);
+        $localfile = Storage::disk('local')->get($letter->path);
         $filename = $id.'.docx';   
         Storage::cloud()->put($filename, $localfile);
 
@@ -81,22 +80,13 @@ class LettersController extends Controller
             return response(["status"=>"ERROR","msg"=>"File does not exist."]);
         }
         $rawData = Storage::cloud()->get($file['path']);
-        Storage::disk('local')->put('/letters/'.$letter->user_id.'/'.$filename,$rawData);
+        Storage::disk('local')->put($letter->path,$rawData);
 
         $response = [
             "status" => "OK",
             "msg" => "Letter saved."
         ];
         return response($response);
-    }
-
-    public function letterList(Request $request){
-        $letters = Letter::where('user_id', $request->header("user_id"))->get();
-        $response = [
-            "status" => "OK",
-            "data" => $letters
-        ];
-        return $response;
     }
 
     public function preview($id,$name){
@@ -153,7 +143,9 @@ class LettersController extends Controller
 
     public function finalize(Request $request){
         $public_path = 'temp_letters/'.$request->header('user_id').'/exam'.$request->n.'.docx';
-        $storage_path = 'letters/'.$request->header('user_id').'/'.$request->filename.'.docx';
+        $storage_path = 'letters/'.$request->header('user_id').'/';
+        $storage_path .= $request->dir!=null?$request->dir:null;
+        $storage_path .= $request->filename.'.docx';
         $file = Storage::disk('public')->get($public_path);
         if($file==null){
             return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
@@ -229,5 +221,42 @@ class LettersController extends Controller
             Storage::disk('public')->put($letter->path, $letter_file);
             return redirect('api.tannaga.com/'.$letter->path);
         }
+    }
+
+    public function indexDirContent(Request $request, $dir=null){
+        $path = $request->header('user_id').'/'.$dir;
+        $data = array_merge(Storage::files($path),Storage::directories($path));
+        return response(['status'=>'OK','data'=>$data]);
+    }
+
+    public function mvLetter(Request $request, $letter_id){
+        $l = Letter::where('_id',$letter_id)->first();
+        if($l==null){
+            return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
+        }
+        try{
+            Storage::disk('local')->move($request->old_path,$request->new_path);
+        }
+        catch(Exception $e){
+            return response(['status'=>'ERROR','msg'=>'Invalid directory.']);
+        }
+        $l->path = $request->new_path;
+        $l->save();
+        return response(['status'=>'OK','msg'=>'Move success.']);
+    }
+
+    public function delLetter(Request $request, $letter_id){
+        $l = Letter::where('_id',$letter_id)->first();
+        if($l==null){
+            return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
+        }
+        try{
+            Storage::disk('local')->delete($request->dir);
+        }
+        catch(Exception $e){
+            return response(['status'=>'ERROR','msg'=>'Failed to delete letter.']);
+        }
+        $l->delete();
+        return response(['status'=>'OK','msg'=>'Delete success.']);
     }
 }

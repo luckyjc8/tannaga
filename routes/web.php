@@ -26,10 +26,13 @@
 	$router->post('/finalize','LettersController@finalize');
 	$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
 	$router->get('/save_letter/{id}',"LettersController@saveLetter");
-	$router->get('/index_letter', "LettersController@letterList");
 	$router->get('/preview/{id}/{filename}','LettersController@preview');
 	$router->post('/email_letter','LettersController@emailLetter');
 	$router->post('/download_letter','LettersController@downloadLetter');
+
+	$router->get('/index_dir[/{dir:.*}]','LettersController@indexDirContent');
+	$router->post('/move_letter/{letter_id}','LettersController@mvLetter');
+	$router->post('/del_letter/{letter_id}','LettersController@delLetter');
 //});
 
 $router->post('/register','UsersController@register');
