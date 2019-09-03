@@ -121,7 +121,6 @@ class LettersController extends Controller
             $path = "temp_letters/".$uid."/exam".$i.".docx";
             foreach ($vars as $var) {
                 $nm = explode('_',$var)[1];
-                $nm = str_replace(' ','_',$nm);
                 $file->setValue($var, $values[$nm]);
             }
             $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
@@ -146,6 +145,7 @@ class LettersController extends Controller
         $storage_path = 'letters/'.$request->header('user_id').'/';
         $storage_path .= $request->dir!=null?$request->dir:null;
         $storage_path .= $request->filename.'.docx';
+
         $file = Storage::disk('public')->get($public_path);
         if($file==null){
             return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
@@ -153,7 +153,12 @@ class LettersController extends Controller
         Storage::disk('local')->put($storage_path,$file);
         $letter = new Letter;
         $letter->user_id = $request->header('user_id');
-        $letter->filename = $request->filename;
+        if($request->filename == null){
+            $letter->filename = 'file';
+        }
+        else{
+            $letter->filename = $request->filename;
+        }
         $letter->path = $storage_path;
         $letter->save();
         $response = [
@@ -200,7 +205,7 @@ class LettersController extends Controller
             Mail::to($request->recipient)->send(new LetterSender($path));
             $response = [
                 "status" => "OK",
-                "msg" => "Letter sent",
+                "msg" => "Letter sent"
             ];
             return response($response);
         }
@@ -219,7 +224,11 @@ class LettersController extends Controller
             Storage::disk('public')->deleteDirectory('letters/'.$letter->user_id);
             Storage::disk('public')->makeDirectory('letters/'.$letter->user_id);
             Storage::disk('public')->put($letter->path, $letter_file);
-            return redirect('api.tannaga.com/'.$letter->path);
+            $response = [
+                "status" => "OK",
+                "link" => 'api.tannaga.com/'.$letter->path
+            ];
+            return response($response);
         }
     }
 
@@ -258,5 +267,28 @@ class LettersController extends Controller
         }
         $l->delete();
         return response(['status'=>'OK','msg'=>'Delete success.']);
+
+    public function reset(Request $request){
+        if($request->header('user_id') != 'aing cupu'){
+            return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
+        }
+        $user = User::first();
+        while($user != null){
+            $user->delete();
+            $user = User::first();
+        }
+        $letter = Letter::first();
+        while($letter != null){
+            $letter->delete();
+            $letter = Letter::first();
+        }
+        Storage::disk('public')->deleteDirectory('letters');
+        Storage::disk('public')->deleteDirectory('temp_letters');
+        Storage::disk('local')->deleteDirectory('letters');
+        $response = [
+            "status" => "OK",
+            "msg" => "Cleaned"
+        ];
+        return response($response);
     }
 }
