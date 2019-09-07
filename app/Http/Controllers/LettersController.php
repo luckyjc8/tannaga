@@ -28,7 +28,7 @@ class LettersController extends Controller
             return ["status"=>"ERROR","msg"=>"Letter does not exist."];
         }
         $localfile = Storage::disk('local')->get($letter->path);
-        $filename = $id.'.docx';   
+        $filename = $id;   
         Storage::cloud()->put($filename, $localfile);
 
         //get uploaded file from drive
@@ -56,7 +56,7 @@ class LettersController extends Controller
         $response = [
             "status" => "OK",
             "msg" => "File uploaded.",
-            "link" => $realLink
+            "link" => $realLink,
         ];
         $permissions = $service->permissions->create($file['basename'], $permission);
         return response($response);
@@ -146,26 +146,59 @@ class LettersController extends Controller
         $storage_path .= $request->dir!=null?$request->dir:null;
         $storage_path .= $request->filename.'.docx';
 
-        $file = Storage::disk('public')->get($public_path);
-        if($file==null){
+        $localfile = Storage::disk('public')->get($public_path);
+        if($localfile==null){
             return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
         }
-        Storage::disk('local')->put($storage_path,$file);
+        Storage::disk('local')->put($storage_path,$localfile);
+
         $letter = new Letter;
         $letter->user_id = $request->header('user_id');
-        if($request->filename == null){
-            $letter->filename = 'file';
-        }
-        else{
-            $letter->filename = $request->filename;
-        }
+        $letter->filename = $request->filename == null ? 'file' : $request->filename;
         $letter->path = $storage_path;
         $letter->save();
+        
+        Storage::cloud()->put($letter->filename, $localfile);
+
+        //get uploaded file from drive
+        $contents = collect(Storage::cloud()->listContents('/', false));
+        $file = $contents
+            ->where('type', '=', 'file')
+            ->where('filename', '=', pathinfo($letter->filename, PATHINFO_FILENAME))
+            ->where('extension', '=', pathinfo($letter->filename, PATHINFO_EXTENSION))
+            ->first();
+
+        // Change permissions of that file
+        // - https://developers.google.com/drive/v3/web/about-permissions
+        // - https://developers.google.com/drive/v3/reference/permissions
+        $service = Storage::cloud()->getAdapter()->getService();
+        $permission = new \Google_Service_Drive_Permission();
+        $permission->setRole('writer');
+        $permission->setType('anyone');
+        $permission->setAllowFileDiscovery(false);
+        
+        //get gdocs link
+        $rawLink = Storage::cloud()->url($file['basename']);
+        $rawLink = parse_url($rawLink, PHP_URL_QUERY);
+        $fileId = substr(explode('&',$rawLink)[0],3);
+        $copy = new \Google_Service_Drive_DriveFile(array(
+            'name' => $letter->filename.'gdocs',
+            'mimeType' => 'application/vnd.google-apps.document'
+        ));
+        $gdocsFile = $service->files->copy($fileId, $copy);
+        $gdocsId = $gdocsFile->id;
+        $realLink = "https://docs.google.com/document/d/".$fileId."/edit";
+        $gdocsLink = "https://docs.google.com/document/d/".$gdocsId."/edit";
         $response = [
             "status" => "OK",
             "msg" => "Finalize success",
             "letter" => $letter->_id
         ];
+        $permissions = $service->permissions->create($file['basename'], $permission);
+
+        $export = $service->files->export($gdocsId, 'application/pdf', array('alt'=>'media'));
+        Storage::disk('local')->put($letter->filename.'.pdf', $export->getBody());
+
         return response($response);
     }
 
