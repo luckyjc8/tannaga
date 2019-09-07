@@ -267,6 +267,7 @@ class LettersController extends Controller
         }
         $l->delete();
         return response(['status'=>'OK','msg'=>'Delete success.']);
+    }
 
     public function reset(Request $request){
         if($request->header('user_id') != 'aing cupu'){
