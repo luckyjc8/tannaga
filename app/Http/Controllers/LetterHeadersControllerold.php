@@ -12,7 +12,18 @@ use Storage;
 
 
 class LetterHeadersController extends Controller{
-	public function generate(Request $request){
+	public function generate(Request $request/*, $lh_id*/){
+		/*$lh = LetterHeader::where('_id', $lh_id)->first();
+
+		//move letter to public
+		$letter = Letter::where('_id', $request->letter_id)->first();
+		if (!$letter) {
+            return response(["status"=>"ERROR","msg"=>"Letter does not exist."]);
+        }
+    	$path = 'letters/'.$letter->user_id.'/'.$letter->name.'.docx';
+    	$localfile = Storage::disk('local')->get($path);
+    	Storage::disk('public')->put($path, $localfile);*/
+    	
     	//imagepath, do something about this
     	$text = $request->text;
     	$text2 = $request->text2;

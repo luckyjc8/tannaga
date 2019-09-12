@@ -21,6 +21,38 @@ class LettersController extends Controller
     //protected $fields = ['letter-template-id', 'attrs', 'path'];
     //fields diisi semua field kecuali id & timestamps
 
+    //internal function
+    public function dateTimeToIndo($dt){
+        $mon = "";
+        $res = $dt->day." ";
+        switch($dt->month){
+            case 1: $mon = "Januari"; break;
+            case 2: $mon = "Februari"; break;
+            case 3: $mon = "Maret"; break;
+            case 4: $mon = "April"; break;
+            case 5: $mon = "Mei"; break;
+            case 6: $mon = "Juni"; break;
+            case 7: $mon = "Juli"; break;
+            case 8: $mon = "Agustus"; break;
+            case 9: $mon = "September"; break;
+            case 10: $mon = "Oktober"; break;
+            case 11: $mon = "November"; break;
+            case 12: $mon = "Desember"; break;
+        }
+        $res .= $mon." ".$dt->year;
+        return $res;
+    }
+    
+    public function getFileDrive($filename){
+        $contents = collect(Storage::cloud()->listContents('/', false));
+        $file = $contents
+            ->where('type', '=', 'file')
+            ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
+            ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
+            ->first();
+        return $file;
+    }
+
     public function uploadLetter($id){
         //get letter file, upload to drive
         $letter = Letter::where('_id', $id)->first();
@@ -30,14 +62,7 @@ class LettersController extends Controller
         $localfile = Storage::disk('local')->get($letter->path);
         $filename = $id;   
         Storage::cloud()->put($filename, $localfile);
-
-        //get uploaded file from drive
-        $contents = collect(Storage::cloud()->listContents('/', false));
-        $file = $contents
-            ->where('type', '=', 'file')
-            ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
-            ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
-            ->first();
+        $file = $this->getFileDrive($filename);        
 
         // Change permissions of that file
         // - https://developers.google.com/drive/v3/web/about-permissions
@@ -69,13 +94,7 @@ class LettersController extends Controller
         }
         $filename = $id.'.docx';
 
-        $recursive = false;
-        $contents = collect(Storage::cloud()->listContents('/', $recursive));
-        $file = $contents
-            ->where('type', '=', 'file')
-            ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
-            ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
-            ->first();
+        $file = $this->getFileDrive($filename);
         if (!$file) {
             return response(["status"=>"ERROR","msg"=>"File does not exist."]);
         }
@@ -159,14 +178,7 @@ class LettersController extends Controller
         $letter->save();
         
         Storage::cloud()->put($letter->filename, $localfile);
-
-        //get uploaded file from drive
-        $contents = collect(Storage::cloud()->listContents('/', false));
-        $file = $contents
-            ->where('type', '=', 'file')
-            ->where('filename', '=', pathinfo($letter->filename, PATHINFO_FILENAME))
-            ->where('extension', '=', pathinfo($letter->filename, PATHINFO_EXTENSION))
-            ->first();
+        $file = $this->getFileDrive($filename);
 
         // Change permissions of that file
         // - https://developers.google.com/drive/v3/web/about-permissions
@@ -200,27 +212,6 @@ class LettersController extends Controller
         Storage::disk('local')->put($letter->filename.'.pdf', $export->getBody());
 
         return response($response);
-    }
-
-    public function dateTimeToIndo($dt){
-        $mon = "";
-        $res = $dt->day." ";
-        switch($dt->month){
-            case 1: $mon = "Januari"; break;
-            case 2: $mon = "Februari"; break;
-            case 3: $mon = "Maret"; break;
-            case 4: $mon = "April"; break;
-            case 5: $mon = "Mei"; break;
-            case 6: $mon = "Juni"; break;
-            case 7: $mon = "Juli"; break;
-            case 8: $mon = "Agustus"; break;
-            case 9: $mon = "September"; break;
-            case 10: $mon = "Oktober"; break;
-            case 11: $mon = "November"; break;
-            case 12: $mon = "Desember"; break;
-        }
-        $res .= $mon." ".$dt->year;
-        return $res;
     }
 
     public function emailLetter(Request $request){
