@@ -51,11 +51,5 @@ $router->get('/', function(){
 $router->get('/restart_all_system', 'LettersController@reset');
 
 $router->get('/test',function(){
-	$imagick = new Imagick();
-	$imagick->setResolution(200,200);
-	$imagick->readImage('asdf.pdf');
-	$imagick->setImageCompressionQuality(200);
-	$imagick->trimImage(0);
-	$imagick->writeImages('asdf.jpg', false);
-	return 'asdf';
+	
 });
