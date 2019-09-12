@@ -81,13 +81,13 @@ class LetterHeadersController extends Controller{
 	    return response($response);
     }
 
-    public function test(){
-    	$file = Storage::disk('public')->get('test.docx');
-    	Storage::disk('public')->put('test2.docx', $file);
-    	$phpWord = new TemplateProcessor('test2.docx');
-    	//$sections = $phpWord->getSections();
-    	//$section = $sections[0];
-    	$phpWord->saveAs('test3.docx');
-    	return 'test';
+    public function pdfToImg(){
+    	$imagick = new Imagick();
+		$imagick->setResolution(200,200);
+		$imagick->readImage('asdf.pdf');
+		$imagick->setImageCompressionQuality(200);
+		$imagick->trimImage(0);
+		$imagick->writeImages('asdf.jpg', false);
+		return 'asdf';
     }
 }
