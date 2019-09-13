@@ -16,10 +16,13 @@ use App\Mail\LetterSender;
 use PhpOffice\PhpWord\PhpWord;
 use \PhpOffice\PhpWord\TemplateProcessor;
 
-class LettersController extends Controller{
+class LettersController extends Controller
+{
+    //protected $fields = ['letter-template-id', 'attrs', 'path'];
+    //fields diisi semua field kecuali id & timestamps
 
     //internal function
-    private function dateTimeToIndo($dt){
+    public function dateTimeToIndo($dt){
         $mon = "";
         $res = $dt->day." ";
         switch($dt->month){
@@ -40,36 +43,73 @@ class LettersController extends Controller{
         return $res;
     }
     
-    private function getFileDrive($filename){
+    public function getFileDrive($filename){
         $contents = collect(Storage::cloud()->listContents('/', false));
         $file = $contents
             ->where('type', '=', 'file')
             ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
+            ->where('extension', '=', pathinfo($filename, PATHINFO_EXTENSION))
             ->first();
         return $file;
     }
 
-    private function getFileDriveID($fileDrive){
-        $rawLink = Storage::cloud()->url($fileDrive['basename']);
-        $rawLink = parse_url($rawLink, PHP_URL_QUERY);
-        $fileId = substr(explode('&', $rawLink)[0],3);
-        return $fileId;
-    }
+    public function uploadLetter($id){
+        //get letter file, upload to drive
+        $letter = Letter::where('_id', $id)->first();
+        if($letter==null){
+            return ["status"=>"ERROR","msg"=>"Letter does not exist."];
+        }
+        $localfile = Storage::disk('local')->get($letter->path);
+        $filename = $id;   
+        Storage::cloud()->put($filename, $localfile);
+        $file = $this->getFileDrive($filename);        
 
-    private function convertToPdf($fileDrive){
+        // Change permissions of that file
+        // - https://developers.google.com/drive/v3/web/about-permissions
+        // - https://developers.google.com/drive/v3/reference/permissions
         $service = Storage::cloud()->getAdapter()->getService();
-        $newFile = new \Google_Service_Drive_DriveFile(array(
-            'name' => $file->filename.'gdocs',
-            'mimeType' => 'application/vnd.google-apps.document'
-        ));
-        $fileId = $this->getFileDriveID($file);
-        $gdocsId = $service->files->copy($fileId, $newFile)->id;
-        $pdfFile = $service->files->export($gdocsId, 'application/pdf', array('alt'=>'media'));
-        return $pdfFile;
+        $permission = new \Google_Service_Drive_Permission();
+        $permission->setRole('writer');
+        $permission->setType('anyone');
+        $permission->setAllowFileDiscovery(false);
+        
+        //get gdocs link
+        $rawLink = Storage::cloud()->url($file['basename']);
+        $rawLink = parse_url($rawLink, PHP_URL_QUERY);
+        $fileId = substr(explode('&',$rawLink)[0],3);
+        $realLink = "https://docs.google.com/document/d/".$fileId."/edit";
+        $response = [
+            "status" => "OK",
+            "msg" => "File uploaded.",
+            "link" => $realLink,
+        ];
+        $permissions = $service->permissions->create($file['basename'], $permission);
+        return response($response);
     }
 
-    private function filepath($letter){
-        return $letter->path.'/'.$letter->filename;
+    public function saveLetter($id){
+        $letter = Letter::where('_id', $id)->first();
+        if (!$letter) {
+            return response(["status"=>"ERROR","msg"=>"Letter does not exist."]);
+        }
+        $filename = $id.'.docx';
+
+        $file = $this->getFileDrive($filename);
+        if (!$file) {
+            return response(["status"=>"ERROR","msg"=>"File does not exist."]);
+        }
+        $rawData = Storage::cloud()->get($file['path']);
+        Storage::disk('local')->put($letter->path,$rawData);
+
+        $response = [
+            "status" => "OK",
+            "msg" => "Letter saved."
+        ];
+        return response($response);
+    }
+
+    public function preview($id,$name){
+        return Storage::disk('public')->get('/temp_letters/'.$id.'/'.$name);
     }
 
     public function generate(Request $request,$id){
@@ -89,10 +129,10 @@ class LettersController extends Controller{
             if (count($values) < count($vars)){
                 return ["status"=>"ERROR","msg"=>"Incomplete parameters."];
             };
-            $keys = array_keys($values); //reindexing $values
-            foreach($values as $key => $val){
+            $keys=array_keys($values);
+            foreach($values as $k => $val){
                 try{   
-                    $values[$key] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $val));
+                    $values[$k] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $val));
                 }
                 catch(Exception $e){
                 }
@@ -109,8 +149,8 @@ class LettersController extends Controller{
             Storage::disk('public')->put($path, $localfile);
             $files[] = 'api.tannaga.com/preview/'.$uid.'/exam'.$i.'.docx';
         }
-        $data['id'] = $uid;
         $data['template'] = $lt;
+        $data['id'] = $uid;
         $data['files'] = $files;
         $response = [
             "status" => "OK",
@@ -121,102 +161,29 @@ class LettersController extends Controller{
 
     public function finalize(Request $request){
         $public_path = 'temp_letters/'.$request->header('user_id').'/exam'.$request->n.'.docx';
-        $storage_path = 'letters/'.$request->header('user_id');
-        $storage_path .= $request->dir!=null?'/'.$request->dir:null;
+        $storage_path = 'letters/'.$request->header('user_id').'/';
+        $storage_path .= $request->dir!=null?$request->dir:null;
+        $storage_path .= $request->filename.'.docx';
 
         $localfile = Storage::disk('public')->get($public_path);
         if($localfile==null){
             return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
         }
+        Storage::disk('local')->put($storage_path,$localfile);
 
-        //create new Letter
         $letter = new Letter;
         $letter->user_id = $request->header('user_id');
-        $letter->filename = $request->filename != null ? $request->filename : 'file';
+        $letter->filename = $request->filename == null ? 'file' : $request->filename;
         $letter->path = $storage_path;
         $letter->save();
-
-        $filepath = $this->filepath($letter);
-
-        Storage::disk('local')->put($filepath.'.docx',$localfile);
+        
         Storage::cloud()->put($letter->filename, $localfile);
-        $fileDrive = $this->getFileDrive($letter->filename);
-        $pdfFile = $this->convertToPdf($fileDrive);
-        Storage::disk('local')->put($filepath.'.pdf', $pdfFile->getBody());
-        
-        $response = [
-            "status" => "OK",
-            "msg" => "Finalize success",
-            "letter" => $letter->_id
-        ];
-
-        return response($response);
-    }
-
-    public function emailLetter(Request $request){
-        //email from local to email address
-        $path = Letter::where('_id',$request->letter_id)->first()->path;
-        if($request->recipient != null){
-            try {
-                Mail::to($request->recipient)->send(new LetterSender($path));
-            }
-            catch (Exception $e) {
-                return response(["status"=>"ERROR","msg"=>"Maneh.coopoo"]);
-            }
-        }
-        else{
-            $user = User::where('_id', $request->header('user_id'))->first();
-            Mail::to($user->email)->send(new LetterSender($path));
-        }
-        $response = [
-            "status" => "OK",
-            "msg" => "Letter sent",
-        ];
-        return response($response);
-    }
-
-    public function downloadLetter(Request $request){
-        //download from local to your computer
-        $letter = Letter::where('_id',$request->letter_id)->first();
-        if($letter==null){
-            return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
-        }
-        else if($request->header('user_id')!=$letter->user_id){
-            return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
-        }
-        else{
-            Storage::disk('public')->deleteDirectory($letter->path);
-            Storage::disk('public')->makeDirectory($letter->path);
-
-            $filepath = $this->filepath($letter);
-
-            $letter_docx = Storage::disk('local')->get($filepath.'.docx');
-            Storage::disk('public')->put($filepath.'.docx', $letter_docx);
-
-            $letter_pdf = Storage::disk('local')->get($filepath.'.pdf');
-            Storage::disk('public')->put($filepath.'.pdf', $letter_pdf);
-
-            $response = [
-                "status" => "OK",
-                "linkdocx" => 'api.tannaga.com/'.$filepath.'.docx',
-                "linkpdf" => 'api.tannaga.com/'.$filepath.'.pdf'
-            ];
-            return response($response);
-        }
-    }
-
-    public function uploadLetter($id){
-        //upload from local to drive
-        $letter = Letter::where('_id', $id)->first();
-        if($letter==null){
-            return ["status"=>"ERROR","msg"=>"Letter does not exist."];
-        }
-        $localfile = Storage::disk('local')->get($letter->path);
-        $filename = $id;
-        Storage::cloud()->put($filename, $localfile);
-        
-        $file = $this->getFileDrive($filename);
-
+        $contents = collect(Storage::cloud()->listContents('/', false));
+        $file = $contents
+            ->where('type', '=', 'file')
+            ->where('filename', '=', pathinfo($letter->filename, PATHINFO_FILENAME))
+            ->where('extension', '=', pathinfo($letter->filename, PATHINFO_EXTENSION))
+            ->first();
         // Change permissions of that file
         // - https://developers.google.com/drive/v3/web/about-permissions
         // - https://developers.google.com/drive/v3/reference/permissions
@@ -225,45 +192,72 @@ class LettersController extends Controller{
         $permission->setRole('writer');
         $permission->setType('anyone');
         $permission->setAllowFileDiscovery(false);
+        
+        //get gdocs link
+        $rawLink = Storage::cloud()->url($file['basename']);
+        $rawLink = parse_url($rawLink, PHP_URL_QUERY);
+        $fileId = substr(explode('&',$rawLink)[0],3);
+        $copy = new \Google_Service_Drive_DriveFile(array(
+            'name' => $letter->filename.'gdocs',
+            'mimeType' => 'application/vnd.google-apps.document'
+        ));
+        $gdocsFile = $service->files->copy($fileId, $copy);
+        $gdocsId = $gdocsFile->id;
+        $realLink = "https://docs.google.com/document/d/".$fileId."/edit";
+        $gdocsLink = "https://docs.google.com/document/d/".$gdocsId."/edit";
+        $response = [
+            "status" => "OK",
+            "msg" => "Finalize success",
+            "letter" => $letter->_id
+        ];
         $permissions = $service->permissions->create($file['basename'], $permission);
-        return $file;
-    }
 
-    public function editLetter($id){
-        //edit file in drive
-        $file = $this->uploadLetter($id);
-        $fileId = $this->getFileDriveID($file);
-        $link = "https://docs.google.com/document/d/".$fileId."/edit";
-        $response = [
-            "status" => "OK",
-            "msg" => "File uploaded.",
-            "link" => $link
-        ];
+        $export = $service->files->export($gdocsId, 'application/pdf', array('alt'=>'media'));
+        Storage::disk('local')->put($letter->filename.'.pdf', $export->getBody());
+
         return response($response);
     }
 
-    public function saveLetter($id){
-        //save letter from drive to local
-        $letter = Letter::where('_id', $id)->first();
-        if (!$letter) {
-            return response(["status"=>"ERROR","msg"=>"Letter does not exist."]);
+    public function emailLetter(Request $request){
+        $path = Letter::where('_id',$request->letter_id)->first()->path;
+        if($request->myself != null){
+            $user = User::where('_id', $request->header('user_id'))->first();
+            Mail::to($user->email)->send(new LetterSender($path));
+            $response = [
+                "status" => "OK",
+                "msg" => "Letter sent",
+            ];
+            return response($response);
         }
-        $filename = $id;
-        $file = $this->getFileDrive($filename);
-        if (!$file) {
-            return response(["status"=>"ERROR","msg"=>"File does not exist."]);
+        else{
+            Mail::to($request->recipient)->send(new LetterSender($path));
+            $response = [
+                "status" => "OK",
+                "msg" => "Letter sent"
+            ];
+            return response($response);
         }
-        $rawData = Storage::cloud()->get($file['path']);
-        Storage::disk('local')->put($letter->path, $rawData);
-        $response = [
-            "status" => "OK",
-            "msg" => "Letter saved."
-        ];
-        return response($response);
     }
 
-    public function preview($id,$name){
-        return Storage::disk('public')->get('/temp_letters/'.$id.'/'.$name);
+    public function downloadLetter(Request $request){
+        $letter = Letter::where('_id',$request->letter_id)->first();
+        if($letter==null){
+            return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
+        }
+        else if($request->header('user_id')!=$letter->user_id){
+            return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
+        }
+        else{
+            $letter_file = Storage::disk('local')->get($letter->path);
+            Storage::disk('public')->deleteDirectory('letters/'.$letter->user_id);
+            Storage::disk('public')->makeDirectory('letters/'.$letter->user_id);
+            Storage::disk('public')->put($letter->path, $letter_file);
+            $response = [
+                "status" => "OK",
+                "link" => 'api.tannaga.com/'.$letter->path
+            ];
+            return response($response);
+        }
     }
 
     public function indexDirContent(Request $request, $dir=null){

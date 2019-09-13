@@ -24,7 +24,7 @@
 	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
 	$router->post('/generate/{id}','LettersController@generate');
 	$router->post('/finalize','LettersController@finalize');
-	$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
+	$router->post('/edit_letter/{id}', "LettersController@editLetter");
 	$router->get('/save_letter/{id}',"LettersController@saveLetter");
 	$router->get('/preview/{id}/{filename}','LettersController@preview');
 	$router->post('/email_letter','LettersController@emailLetter');
@@ -53,3 +53,5 @@ $router->get('/restart_all_system', 'LettersController@reset');
 $router->get('/test',function(){
 	
 });
+
+$router->get('/hua/{filename}', 'LettersController@getFileDrive');
