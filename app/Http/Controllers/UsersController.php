@@ -47,7 +47,7 @@ class UsersController extends Controller
 			"msg" => "User created."
 		];
 		$user->save();
-		Mail::to($user->email)->send(new EmailConfirm("tannaga.com/activate/".$user->_id."/".$str));
+		Mail::to($user->email)->send(new EmailConfirm(env("APP_URL")."/activate/".$user->_id."/".$str));
 		return response($response);
 	}
 
@@ -95,7 +95,7 @@ class UsersController extends Controller
 			$str = Str::random(60);
 			$user->forgot_link = Hash::make($str);
 			$user->save();
-			Mail::to($user->email)->send(new PasswordReset("tannaga.com/change/".$user->_id."/".$str));
+			Mail::to($user->email)->send(new PasswordReset(env("APP_URL")."/change/".$user->_id."/".$str));
 			$response = [
 				"status" => "OK",
 				"msg" => "Password reset link sent to email."

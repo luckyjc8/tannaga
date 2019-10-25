@@ -12,7 +12,7 @@ use Storage;
 class LetterTemplatesController extends Controller{
 	
 
-    public function getFields($id){
+    public function getFields($id, $i=1){
     	$template = LetterTemplate::where('_id',$id)->first();
     	if($template == null){
     		$response = [

@@ -32,7 +32,7 @@
 
 	$router->post('/generate/{id}','LettersController@generate');
 	$router->post('/finalize','LettersController@finalize');
-	$router->post('/edit_letter/{id}', "LettersController@editLetter");
+	$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
 	$router->post('/email_letter','LettersController@emailLetter');
 	$router->post('/download_letter','LettersController@downloadLetter');
 
@@ -61,5 +61,3 @@ $router->get('/restart_all_system', 'LettersController@reset');
 $router->get('/test',function(){
 	
 });
-
-$router->get('/hua/{filename}', 'LettersController@getFileDrive');
