@@ -21,9 +21,21 @@ class UsersController extends Controller
 		return (!preg_match("/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix", $str)) ? FALSE : TRUE;
 	}
 
-	public function getName($id){
-		$user = User::where('_id', $id)->first();
-		return $user->name;
+	public function getName(Request $request){
+		$user = User::where('_id', $request->header('user_id'))->first();
+		if ($user==null) {
+			$response =[
+				"status" => "ERROR",
+				"msg" => "User not found."
+			];
+		}
+		else {
+			$response = [
+				"status" => "OK",
+				"name" => $user->name;
+			];
+		}
+		return response($response);
 	}
 	public function register(Request $request){
 		if (!$this->valid_email($request->email)){
