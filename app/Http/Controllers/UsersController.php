@@ -20,6 +20,11 @@ class UsersController extends Controller
 	public function valid_email($str) {
 		return (!preg_match("/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix", $str)) ? FALSE : TRUE;
 	}
+
+	public function getName($id){
+		$user = User::where('_id', $id)->first();
+		return $user->name;
+	}
 	public function register(Request $request){
 		if (!$this->valid_email($request->email)){
 			return response(["status"=> "ERROR", "msg" => "Email invalid"]);
