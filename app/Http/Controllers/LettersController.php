@@ -305,6 +305,29 @@ class LettersController extends Controller{
         return response(['status'=>'OK','msg'=>'Delete success.']);
     }
 
+    public function getAllFiles(Request $request){
+        $paths = Storage::disk('local')->files('letters/'.$request->header('user_id'));
+        dd($paths);
+        $letters = Letter::get();
+        $hua = [];
+        foreach ($letters as $letter) {
+            if(in_array($this->filepath($letter).'.docx', $paths)){
+                $hua[] = $letter;
+            }
+        }
+        return $hua;
+    }
+
+    public function getAllDirs(Request $request){
+        $paths = Storage::disk('local')->directories('letters/'.$request->header('user_id'));
+        $dirs = [];
+        foreach ($paths as $path) {
+            $temp = explode('/', $path);
+            $dirs[] = end($temp);
+        }
+        return $dirs;
+    }
+
     public function reset(Request $request){
         if($request->header('user_id') != 'aing cupu'){
             return response(['status'=>'ERROR','msg'=>'Access forbidden.']);

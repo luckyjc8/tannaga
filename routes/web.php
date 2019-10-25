@@ -61,3 +61,10 @@ $router->get('/restart_all_system', 'LettersController@reset');
 $router->get('/test',function(){
 	
 });
+
+
+
+//new function
+$router->get('/getName/{id}', 'UsersController@getName');
+$router->get('/getAllDirs', 'LettersController@getAllDirs');
+$router->get('/getAllFiles', 'LettersController@getAllFiles');
