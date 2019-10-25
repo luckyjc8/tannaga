@@ -307,19 +307,27 @@ class LettersController extends Controller{
 
     public function getAllFiles(Request $request){
         $paths = Storage::disk('local')->files('letters/'.$request->header('user_id'));
-        $letters = Letter::get();
-        $hua = [];
-        foreach ($letters as $letter) {
+        $allLetters = Letter::get();
+        $letters = [];
+        foreach ($allLetters as $letter) {
             if(in_array($this->filepath($letter).'.docx', $paths)){
-                $hua[] = $letter;
+                $letters[] = $letter;
             }
         }
-        return $hua;
+        $response = [
+            "status" => "OK",
+            "letters" => $letters
+        ];
+        return response($response);
     }
 
     public function getHistory(Request $request){
         $letters = Letter::where('user_id', $request->header('user_id'))->get();
-        return $letters;
+        $response = [
+            "status" => "OK",
+            "letters" => $letters
+        ];
+        return response($response);
     }
 
     public function getAllDirs(Request $request){
@@ -329,7 +337,11 @@ class LettersController extends Controller{
             $temp = explode('/', $path);
             $dirs[] = end($temp);
         }
-        return $dirs;
+        $response = [
+            "status" => "OK",
+            "dirs" => $dirs
+        ];
+        return response($response);
     }
 
     public function reset(Request $request){
