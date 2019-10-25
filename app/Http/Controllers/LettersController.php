@@ -307,7 +307,6 @@ class LettersController extends Controller{
 
     public function getAllFiles(Request $request){
         $paths = Storage::disk('local')->files('letters/'.$request->header('user_id'));
-        dd($paths);
         $letters = Letter::get();
         $hua = [];
         foreach ($letters as $letter) {
@@ -316,6 +315,11 @@ class LettersController extends Controller{
             }
         }
         return $hua;
+    }
+
+    public function getHistory(Request $request){
+        $letters = Letter::where('user_id', $request->header('user_id'))->get();
+        return $letters;
     }
 
     public function getAllDirs(Request $request){
@@ -350,5 +354,8 @@ class LettersController extends Controller{
             "msg" => "Cleaned"
         ];
         return response($response);
+    }
+    public function makeDir(Request $request){
+        Storage::makeDirectory('letters/'.$request->header('user_id').'/'.$request->dirname);
     }
 }

@@ -68,3 +68,5 @@ $router->get('/test',function(){
 $router->get('/getName', 'UsersController@getName');
 $router->get('/getAllDirs', 'LettersController@getAllDirs');
 $router->get('/getAllFiles', 'LettersController@getAllFiles');
+$router->get('/getHistory', 'LettersController@getHistory');
+$router->post('/makeDir', 'LettersController@makeDir');

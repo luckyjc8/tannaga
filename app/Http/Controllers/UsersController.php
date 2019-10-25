@@ -32,7 +32,7 @@ class UsersController extends Controller
 		else {
 			$response = [
 				"status" => "OK",
-				"name" => $user->name;
+				"name" => $user->name
 			];
 		}
 		return response($response);

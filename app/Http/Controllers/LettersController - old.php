@@ -13,7 +13,7 @@ use App\LetterTemplate;
 use App\Mail\LetterSender;
 use PhpOffice\PhpWord\PhpWord;
 use \PhpOffice\PhpWord\TemplateProcessor;
-class LettersController extends Controller
+class LettersControllerolderthanbefore extends Controller
 {
     //protected $fields = ['letter-template-id', 'attrs', 'path'];
     //fields diisi semua field kecuali id & timestamps

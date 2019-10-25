@@ -11,7 +11,7 @@ use \PhpOffice\PhpWord\SimpleType\Jc;
 use Storage;
 
 
-class LetterHeadersController extends Controller{
+class LetterHeadersControllerold extends Controller{
 	public function generate(Request $request/*, $lh_id*/){
 		/*$lh = LetterHeader::where('_id', $lh_id)->first();
 
