@@ -72,6 +72,8 @@ class LettersController extends Controller{
         return $letter->path.'/'.$letter->filename;
     }
 
+
+    //main function
     public function generate(Request $request,$id){
         $uid = $request->header("user_id");
         $values = $request->request->all();
@@ -198,8 +200,8 @@ class LettersController extends Controller{
 
             $response = [
                 "status" => "OK",
-                "linkdocx" => 'api.tannaga.com/'.$filepath.'.docx',
-                "linkpdf" => 'api.tannaga.com/'.$filepath.'.pdf'
+                "linkdocx" => env("APP_URL").$filepath.'.docx',
+                "linkpdf" => env("APP_URL").$filepath.'.pdf'
             ];
             return response($response);
         }

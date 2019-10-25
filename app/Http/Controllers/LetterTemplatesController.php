@@ -10,7 +10,9 @@ use Carbon\Carbon;
 use Storage;
 
 class LetterTemplatesController extends Controller{
-	public function getFields($id, $i=1){
+	
+
+    public function getFields($id){
     	$template = LetterTemplate::where('_id',$id)->first();
     	if($template == null){
     		$response = [
@@ -48,7 +50,58 @@ class LetterTemplatesController extends Controller{
     	}
     	return response($response);
     }
+    
+    public function path($name,$i){
+    	return 'letter_template/'.$name.'/temp'.$i.'.docx';
+    }
 
+    public function checkDocsValidity(){
+        $res = json_decode($this->checkDocsValidityVerbose()->getContent());
+        $problem = [];
+        foreach($res->data as $k=>$r){
+            if($r->original->status != "OK"){
+                $problem[] = $k;
+            }
+        }
+        if(count($problem)){
+            $response = [
+                "status" => "ERROR",
+                "errors" => $problem
+            ];
+            return response($response);
+        }
+        else{
+            return response(["status"=>"OK","msg"=>"All documents valid"]);
+        }
+        
+    }
+
+    public function checkDocsValidityVerbose($lt_name = null){
+        $res = [];
+        if($lt_name !=null){
+            $lt = LetterTemplate::where('name',$lt_name)->first();
+            for($i=1;$i<=$lt->count;$i++){
+                $res[$lt_name.'_'.$i] = $this->getFields($lt->_id,$i);
+            }
+        }
+        else{
+            $lts = LetterTemplate::all();
+            foreach($lts as $lt){
+                for($i=1;$i<=$lt->count;$i++){
+                    $res[$lt->name.'_'.$i] = $this->getFields($lt->_id,$i);
+                }
+            }
+        }
+        $response = [
+            "status" => "OK",
+            "data" => $res
+        ];
+        return response($response);
+    }
+
+
+
+    //admin function, do it later
     public function create(Request $request){
         $lt = new LetterTemplate;
         if ($request->name == null){
@@ -115,52 +168,5 @@ class LetterTemplatesController extends Controller{
         $file = Storage::cloud()->get($link);
         Storage::disk('public')->put('/letter_template/'.$lt->name.'/temp'.$lt->count.'.docx',$file);
         return response(["status"=>"OK","msg"=>"Letter template added."]);
-    }
-    public function path($name,$i){
-    	return 'letter_template/'.$name.'/temp'.$i.'.docx';
-    }
-
-    public function checkDocsValidity(){
-        $res = json_decode($this->checkDocsValidityVerbose()->getContent());
-        $problem = [];
-        foreach($res->data as $k=>$r){
-            if($r->original->status != "OK"){
-                $problem[] = $k;
-            }
-        }
-        if(count($problem)){
-            $response = [
-                "status" => "ERROR",
-                "errors" => $problem
-            ];
-            return response($response);
-        }
-        else{
-            return response(["status"=>"OK","msg"=>"All documents valid"]);
-        }
-        
-    }
-
-    public function checkDocsValidityVerbose($lt_name = null){
-        $res = [];
-        if($lt_name !=null){
-            $lt = LetterTemplate::where('name',$lt_name)->first();
-            for($i=1;$i<=$lt->count;$i++){
-                $res[$lt_name.'_'.$i] = $this->getFields($lt->_id,$i);
-            }
-        }
-        else{
-            $lts = LetterTemplate::all();
-            foreach($lts as $lt){
-                for($i=1;$i<=$lt->count;$i++){
-                    $res[$lt->name.'_'.$i] = $this->getFields($lt->_id,$i);
-                }
-            }
-        }
-        $response = [
-            "status" => "OK",
-            "data" => $res
-        ];
-        return response($response);
     }
 }

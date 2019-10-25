@@ -11,6 +11,7 @@
 |
 */
 
+//admin part
 //$router->group(['middleware'=>'admin'], function() use ($router){
 	$router->post('/create_template','LetterTemplatesController@create');
 	$router->post('/new_template/{lt_id}','LetterTemplatesController@initTemplate');
@@ -19,14 +20,19 @@
 	$router->get('/check_docs_v','LetterTemplatesController@checkDocsValidityVerbose');
 //});
 
+
 //$router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/logout', 'UsersController@logout');
+	
 	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
+	
+
+	$router->get('/save_letter/{id}',"LettersController@saveLetter");
+	$router->get('/preview/{id}/{filename}','LettersController@preview');
+
 	$router->post('/generate/{id}','LettersController@generate');
 	$router->post('/finalize','LettersController@finalize');
 	$router->post('/edit_letter/{id}', "LettersController@editLetter");
-	$router->get('/save_letter/{id}',"LettersController@saveLetter");
-	$router->get('/preview/{id}/{filename}','LettersController@preview');
 	$router->post('/email_letter','LettersController@emailLetter');
 	$router->post('/download_letter','LettersController@downloadLetter');
 
@@ -35,8 +41,10 @@
 	$router->post('/del_letter/{letter_id}','LettersController@delLetter');
 //});
 
-$router->post('/register','UsersController@register');
 $router->post('/login', 'UsersController@login');
+$router->post('/register','UsersController@register');
+
+
 $router->get('/activate/{id}/{token}', 'UsersController@activateAccount');
 $router->post('/forget', 'UsersController@forgetPassword');
 $router->post('/change/{id}/{token}', 'UsersController@changePassword');
@@ -45,7 +53,7 @@ $router->get('/check_cp_token/{id}/{token}','UsersController@checkChangePassword
 
 
 $router->get('/', function(){
-   return '<html><title>Tannaga API</title><body><h1> You have reached tannaga API. There is nothing to do here.</h1></body></html>' ;
+   return redirect("https://www.tannaga.com");
 });
 
 $router->get('/restart_all_system', 'LettersController@reset');
