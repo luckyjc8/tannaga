@@ -305,6 +305,10 @@ class LettersController extends Controller{
         return response(['status'=>'OK','msg'=>'Delete success.']);
     }
 
+    public function delLetters(Request $request){
+        
+    }
+
     public function getAllFiles(Request $request){
         $paths = Storage::disk('local')->files('letters/'.$request->header('user_id'));
         $allLetters = Letter::get();
@@ -344,6 +348,10 @@ class LettersController extends Controller{
         return response($response);
     }
 
+    public function makeDir(Request $request){
+        Storage::makeDirectory('letters/'.$request->header('user_id').'/'.$request->dirname);
+    }
+
     public function reset(Request $request){
         if($request->header('user_id') != 'aing cupu'){
             return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
@@ -366,8 +374,5 @@ class LettersController extends Controller{
             "msg" => "Cleaned"
         ];
         return response($response);
-    }
-    public function makeDir(Request $request){
-        Storage::makeDirectory('letters/'.$request->header('user_id').'/'.$request->dirname);
     }
 }

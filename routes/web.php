@@ -58,10 +58,6 @@ $router->get('/', function(){
 
 $router->get('/restart_all_system', 'LettersController@reset');
 
-$router->get('/test',function(){
-	
-});
-
 
 
 //new function
@@ -70,3 +66,30 @@ $router->get('/getAllDirs', 'LettersController@getAllDirs');
 $router->get('/getAllFiles', 'LettersController@getAllFiles');
 $router->get('/getHistory', 'LettersController@getHistory');
 $router->post('/makeDir', 'LettersController@makeDir');
+
+/*// API route group
+$router->group(['prefix' => 'api'], function () use ($router) {
+     // Matches "/api/register
+    $router->post('register', 'AuthController@register');
+
+      // Matches "/api/login
+     $router->post('login', 'AuthController@login');
+});*/
+
+// API route group
+$router->group(['prefix' => 'api'], function () use ($router) {
+    // Matches "/api/register
+   $router->post('register', 'AuthController@register');
+     // Matches "/api/login
+    $router->post('login', 'AuthController@login');
+
+    // Matches "/api/profile
+    $router->get('profile', 'UserController@profile');
+
+    // Matches "/api/users/1 
+    //get one user by id
+    $router->get('users/{id}', 'UserController@singleUser');
+
+    // Matches "/api/users
+    $router->get('users', 'UserController@allUsers');
+});
