@@ -72,6 +72,27 @@ class LettersController extends Controller{
         return $letter->path.'/'.$letter->filename;
     }
 
+    private function restoreFromTrash($l){
+        Storage::disk('local')->move(
+            $l->path.'/'.$l->filename.'.docx',
+            $l->old_path.'/'.$l->filename.'.docx',
+        );
+        $l->path = $l->old_path;
+        $l->deleted_at = null;
+        $l->old_path=null;
+        $l->save();
+    }
+
+    private function moveToTrash($l){
+        $l->old_path = $l->path;
+        Storage::disk('local')->move(
+            $l->path.'/'.$l->filename.'.docx',
+            'letters/'.$l->user_id.'/trash/'.$l->filename.'.docx',
+        );
+        $l->path = 'letters/'.$l->user_id.'/trash';
+        $l->deleted_at = Carbon::now();
+        $l->save();
+    }
 
     //main function
     public function generate(Request $request,$id){
@@ -290,31 +311,73 @@ class LettersController extends Controller{
         return response(['status'=>'OK','msg'=>'Move success.']);
     }
 
-    public function delLetter(Request $request, $letter_id){
+    public function delLetter($letter_id){
         $l = Letter::where('_id',$letter_id)->first();
-        if($l==null){
+        if($l==null || $l->deleted_at){
             return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
         }
+        if($l->starred){
+            return response(['status'=>'ERROR','msg'=>'Letter is starred.']);
+        }
         try{
-            Storage::disk('local')->delete($request->dir);
+            $this->moveToTrash($l);
         }
         catch(Exception $e){
             return response(['status'=>'ERROR','msg'=>'Failed to delete letter.']);
         }
-        $l->delete();
-        return response(['status'=>'OK','msg'=>'Delete success.']);
+        return response(['status'=>'OK','msg'=>"Delete success"]);
     }
 
-    public function delLetters(Request $request){
-        
+    public function restoreLetter($letter_id){
+        $l = Letter::where('_id',$letter_id)->first();
+        if($l==null || !$l->deleted_at){
+            return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
+        }
+        try{
+            $this->restoreFromTrash($l);
+        }
+        catch(Exception $e){
+            dd($e);
+            return response(['status'=>'ERROR','msg'=>'Failed to restore letter.']);
+        }
+        return response(['status'=>'OK','msg'=>"Restore success"]);
+    }
+
+    public function starLetter(Request $request, $id){
+        $letter = Letter::where('user_id',$request->header('user_id'))->where('_id',$id)->first();
+        if(!$letter){
+            //return response(['status'=>'ERROR','msg'=>'No such letter']);
+            return response(['id'=>$id,'user_id'=>$request->header('user_id')]);
+        }
+        $letter->starred = !$letter->starred;
+        $letter->save();
+        return response(['status'=>'OK','msg'=>'Star changed']);
     }
 
     public function getAllFiles(Request $request){
-        $paths = Storage::disk('local')->files('letters/'.$request->header('user_id'));
-        $allLetters = Letter::get();
+        $path = isset($request->path) ? str_replace('+',' ',$request->path) : "";
+        $all_paths = Storage::disk('local')->allFiles('letters/'.$request->header('user_id'));
+        $paths = Storage::disk('local')->files('letters/'.$request->header('user_id').'/'.$path);
+        $trash_paths = Storage::disk('local')->files('letters/'.$request->header('user_id').'/trash');
+        $starred = isset($request->starred) ? $request->starred : false;
+        $trash = isset($request->trash) ? $request->trash : false;;
+        if($starred && $trash){return response(["status"=>"ERROR","msg"=>"Bad request"]);}
+        $allLetters = Letter::where('user_id',$request->header('user_id'))->get();
         $letters = [];
         foreach ($allLetters as $letter) {
-            if(in_array($this->filepath($letter).'.docx', $paths)){
+            if(!$trash){
+                if($starred){
+                    if(in_array($this->filepath($letter).'.docx', $all_paths) && $letter->starred){
+                        $letters[] = $letter;
+                    }
+                }
+                else{
+                    if(in_array($this->filepath($letter).'.docx', $paths)){
+                        $letters[] = $letter;
+                    }
+                }
+            }
+            if(in_array($this->filepath($letter).'.docx', $trash_paths) && $trash){
                 $letters[] = $letter;
             }
         }
@@ -339,7 +402,7 @@ class LettersController extends Controller{
         $dirs = [];
         foreach ($paths as $path) {
             $temp = explode('/', $path);
-            $dirs[] = end($temp);
+            if(end($temp) != 'trash'){$dirs[] = end($temp);}
         }
         $response = [
             "status" => "OK",
@@ -349,7 +412,15 @@ class LettersController extends Controller{
     }
 
     public function makeDir(Request $request){
+        $dirs = Storage::disk('local')->directories('letters/'.$request->header('user_id'));
+        foreach($dirs as $dir){
+            $exploded = explode('/',$dir);
+            if(end($exploded) == $request->dirname){
+                return response(['status'=>'ERROR','msg' => 'Directory already exists']);
+            }
+        }
         Storage::makeDirectory('letters/'.$request->header('user_id').'/'.$request->dirname);
+        return response(['status'=>'OK','msg'=>'Directory created']);
     }
 
     public function reset(Request $request){

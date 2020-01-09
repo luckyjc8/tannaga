@@ -39,6 +39,7 @@
 	$router->get('/index_dir[/{dir:.*}]','LettersController@indexDirContent');
 	$router->post('/move_letter/{letter_id}','LettersController@mvLetter');
 	$router->post('/del_letter/{letter_id}','LettersController@delLetter');
+	$router->post('/res_letter/{letter_id}','LettersController@restoreLetter');
 //});
 
 $router->post('/login', 'UsersController@login');
@@ -62,6 +63,7 @@ $router->get('/restart_all_system', 'LettersController@reset');
 
 //new function
 $router->get('/getName', 'UsersController@getName');
+$router->post('/star/{id}', 'LettersController@starLetter');
 $router->get('/getAllDirs', 'LettersController@getAllDirs');
 $router->get('/getAllFiles', 'LettersController@getAllFiles');
 $router->get('/getHistory', 'LettersController@getHistory');
