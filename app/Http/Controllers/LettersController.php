@@ -301,7 +301,7 @@ class LettersController extends Controller{
             return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
         }
         try{
-            Storage::disk('local')->move($request->old_path,$request->new_path);
+            Storage::disk('local')->move($l->path,$request->new_path);
         }
         catch(Exception $e){
             return response(['status'=>'ERROR','msg'=>'Invalid directory.']);
