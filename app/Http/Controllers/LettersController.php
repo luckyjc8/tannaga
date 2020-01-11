@@ -130,7 +130,7 @@ class LettersController extends Controller{
             $file->saveAs($path);
             $localfile = Storage::disk('public')->get('/'.$path);
             Storage::disk('public')->put($path, $localfile);
-            $files[] = env("APP_URL").'/preview/'.$uid.'/exam'.$i.'.docx';
+            $files[] = env("APP_URL").'/temp_letters/'.$uid.'/exam'.$i.'.docx';
         }
         $data['id'] = $uid;
         $data['template'] = $lt;
@@ -162,10 +162,10 @@ class LettersController extends Controller{
         $filepath = $this->filepath($letter);
 
         Storage::disk('local')->put($filepath.'.docx', $localfile);
-        /*Storage::cloud()->put($letter->filename.'.docx', $localfile);
+        Storage::cloud()->put($letter->filename.'.docx', $localfile, ['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         $fileDrive = $this->getFileDrive($letter->filename);
         $pdfFile = $this->convertToPdf($fileDrive);
-        Storage::disk('local')->put($filepath.'.pdf', $pdfFile->getBody());*/
+        Storage::disk('local')->put($filepath.'.pdf', $pdfFile->getBody());
         
         $response = [
             "status" => "OK",
@@ -178,13 +178,14 @@ class LettersController extends Controller{
 
     public function emailLetter(Request $request){
         //email from local to email address
-        $path = Letter::where('_id',$request->letter_id)->first()->path;
+        $letter = Letter::where('_id',$request->letter_id)->first();
+        $path = $filepath($letter).'.docx';
         if($request->recipient != null){
             try {
                 Mail::to($request->recipient)->send(new LetterSender($path));
             }
             catch (Exception $e) {
-                return response(["status"=>"ERROR","msg"=>"Maneh.coopoo"]);
+                return response(["status"=>"ERROR","msg"=>"Error send letter."]);
             }
         }
         else{
@@ -216,13 +217,13 @@ class LettersController extends Controller{
             $letter_docx = Storage::disk('local')->get($filepath.'.docx');
             Storage::disk('public')->put($filepath.'.docx', $letter_docx);
 
-            //$letter_pdf = Storage::disk('local')->get($filepath.'.pdf');
-            //Storage::disk('public')->put($filepath.'.pdf', $letter_pdf);
+            $letter_pdf = Storage::disk('local')->get($filepath.'.pdf');
+            Storage::disk('public')->put($filepath.'.pdf', $letter_pdf);
 
             $response = [
                 "status" => "OK",
                 "linkdocx" => env("APP_URL").'/'.$filepath.'.docx',
-            //    "linkpdf" => env("APP_URL").$filepath.'.pdf'
+                "linkpdf" => env("APP_URL").'/'.$filepath.'.pdf'
             ];
             return response($response);
         }
@@ -277,7 +278,7 @@ class LettersController extends Controller{
             return response(["status"=>"ERROR","msg"=>"File does not exist."]);
         }
         $rawData = Storage::cloud()->get($file['path']);
-        Storage::disk('local')->put($letter->path, $rawData);
+        Storage::disk('local')->put($this->filepath($letter).'.docx', $rawData);
         $response = [
             "status" => "OK",
             "msg" => "Letter saved."
@@ -285,7 +286,7 @@ class LettersController extends Controller{
         return response($response);
     }
 
-    public function preview($id,$name){
+    public function preview($id, $name){
         return Storage::disk('public')->get('/temp_letters/'.$id.'/'.$name);
     }
 

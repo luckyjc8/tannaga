@@ -11,6 +11,9 @@ use Storage;
 
 class LetterTemplatesController extends Controller{
 	
+    public function getTemplates(){
+        return response(['status'=>"OK",'data'=>LetterTemplate::all()]);
+    }
 
     public function getFields($id, $i=1){
     	$template = LetterTemplate::where('_id',$id)->first();

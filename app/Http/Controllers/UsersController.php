@@ -226,7 +226,7 @@ class UsersController extends Controller
 	            return response()->json(['message' => 'Unauthorized'], 401);
 	        }
 
-	        return $this->respondWithToken($token);
+	        return response(["token" => $token, "user_id" => $user->id]);
 		}
 	}
 

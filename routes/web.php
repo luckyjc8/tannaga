@@ -21,9 +21,10 @@ $router->group(['middleware'=>'admin'], function() use ($router){
 });
 
 
-$router->post('/edit_letter/{id}', "LettersController@uploadLetter");
+$router->post('/edit_letter/{id}', "LettersController@editLetter");
 $router->post('/email_letter','LettersController@emailLetter');
 $router->post('/download_letter','LettersController@downloadLetter');
+$router->get('/save_letter/{id}',"LettersController@saveLetter");
 
 $router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/logout', 'UsersController@logout');
@@ -31,7 +32,6 @@ $router->group(['middleware'=>'auth'], function() use ($router){
 	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
 	
 
-	$router->get('/save_letter/{id}',"LettersController@saveLetter");
 	$router->get('/preview/{id}/{filename}','LettersController@preview');
 
 	$router->post('/generate/{id}','LettersController@generate');
@@ -49,12 +49,14 @@ $router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/star/{id}', 'LettersController@starLetter');
 	$router->get('/getAllDirs', 'LettersController@getAllDirs');
 	$router->get('/getAllFiles', 'LettersController@getAllFiles');
-	$router->get('/getHistory', 'LettersController@getHistory');
+	$router->get('/getHistory', 'LettersController@getAllFiles');
 	$router->post('/makeDir', 'LettersController@makeDir');
+	$router->get('/getAllTemplates', 'LetterTemplatesController@getTemplates');
 });
 
 $router->post('/login', 'UsersController@login');
 $router->post('/register','UsersController@register');
+
 
 
 $router->get('/activate/{id}/{token}', 'UsersController@activateAccount');
