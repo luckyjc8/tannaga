@@ -128,33 +128,20 @@ class UsersController extends Controller
 	public function activateAccount($id, $token){
 		$user = User::where('_id',$id)->first();
 		if ($user==null) {
-			$response =[
-				"status" => "ERROR",
-				"msg" => "User not found."
-			];
+			return redirect('tannaga-dev.com/activate?success=1&msg=User+not+found.');
 		}
 		else if ($user->is_activated){
-			$response = [
-				"status" => "OK",
-				"msg" => "User already activated."
-			];
+			return redirect('tannaga-dev.com/activate?success=1&msg=User+already+activated.');
 		}
 		else if (!Hash::check($token, $user->activate_link)){
-			$response =[
-				"status" => "ERROR",
-				"msg" => "Token invalid"
-			];
+			return redirect('tannaga-dev.com/activate?success=1&msg=Token+invalid.');
 		}
 		else{
 			$user->is_activated = true;
 			$user->activate_link = null;
 			$user->save();
-			$response = [
-				"status" => "OK",
-				"msg" => "User activated."
-			];
+			return redirect('tannaga-dev.com/activate?success=1&msg=User+activated.');
 		}
-		return response($response);
 	}
 
 	public function forgetPassword(Request $request){
