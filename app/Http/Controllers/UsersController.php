@@ -12,6 +12,7 @@ use App\Mail\EmailConfirm;
 use App\Mail\PasswordReset;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class UsersController extends Controller
 {
@@ -98,25 +99,30 @@ class UsersController extends Controller
 		else if (strlen($request->password) < 8){
 			return response(["status"=> "ERROR", "msg" => "Password invalid"]);
 		}
-		$user = new User;
-		foreach($this->fields as $field){
-			$user->$field = $request->$field;
-		}
-		$user->password = Hash::make($request->password);
-		$user->is_activated = false;
-		$user->created_at = Carbon::now();
-		$user->updated_at = Carbon::now();
-		$user->deleted_at = null;
-		$user->forgot_link = null;
-		$str = Str::random(60);
-		$user->activate_link = Hash::make($str);
-		$response = [
-			"status" => "OK",
-			"msg" => "User created."
-		];
-		$user->save();
-		Mail::to($user->email)->send(new EmailConfirm(env("APP_URL")."/activate/".$user->_id."/".$str));
-		return response($response);
+		try{
+			$user = new User;
+			foreach($this->fields as $field){
+				$user->$field = $request->$field;
+			}
+			$user->password = app('hash')->make($request->password);
+			$user->is_activated = false;
+			$user->created_at = Carbon::now();
+			$user->updated_at = Carbon::now();
+			$user->deleted_at = null;
+			$user->forgot_link = null;
+			$str = Str::random(60);
+			$user->activate_link = Hash::make($str);
+			$response = [
+				"status" => "OK",
+				"msg" => "User created."
+			];
+			$user->save();
+			Mail::to($user->email)->send(new EmailConfirm(env("APP_URL")."/activate/".$user->_id."/".$str));
+			return response($response);
+		} catch (\Exception $e) {
+            //return error message
+            return response()->json(['message' => 'User Registration Failed!'], 409);
+        }
 	}
 
 	public function activateAccount($id, $token){
@@ -227,43 +233,23 @@ class UsersController extends Controller
 			];
 		}
 		else{
-			$str = Str::random(60);
-			if ($request->remember_me){
-				Cookie::make("remember_token", $str, 60*24*30*3);
-				$user->remember_token = Hash::make($str);
-			}
-			else{
-				$user->access_token = Hash::make($str);
-			}
-			$user->save();
-			$response = [
-				"status" => "OK",
-				"msg" => "Login success.",
-				"data" => ["user_id"=>$user->_id, "access_token"=>$str]
-			];
+			$credentials = $request->only(['email', 'password']);
+
+	        if (! $token = Auth::attempt($credentials)) {
+	            return response()->json(['message' => 'Unauthorized'], 401);
+	        }
+
+	        return $this->respondWithToken($token);
 		}
-		return response($response);
 	}
 
 	public function logout(Request $request){
-		$user = User::where('_id',$request->id)->first();
-		if ($user==null) {
-			$response =[
-				"status" => "ERROR",
-				"msg" => "User not found."
-			];
+		try{
+			Auth::logout();
+			return response(['status'=>'OK','msg'=>'Logout success.']);
 		}
-		else{
-			$user->access_token = null;
-			if(Cookie::get('remember_token')!=null){
-				$user->remember_token = null;
-			}
-			$user->save();
-			$response = [
-				"status" => "OK",
-				"msg" => "Logout success."
-			];
+		catch(JWTException $e){
+			return response(['status'=>"ERROR",'msg'=>'Logout failed']);
 		}
-		return response($response);
 	}
 }

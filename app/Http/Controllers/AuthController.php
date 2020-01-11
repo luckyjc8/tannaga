@@ -24,7 +24,6 @@ class AuthController extends Controller
         ]);
 
         try {
-           
             $user = new User;
             $user->name = $request->input('name');
             $user->email = $request->input('email');
@@ -52,7 +51,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-          //validate incoming request 
+        //validate incoming request 
         $this->validate($request, [
             'email' => 'required|string',
             'password' => 'required|string',
