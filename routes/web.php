@@ -12,16 +12,16 @@
 */
 
 //admin part
-//$router->group(['middleware'=>'admin'], function() use ($router){
+$router->group(['middleware'=>'admin'], function() use ($router){
 	$router->post('/create_template','LetterTemplatesController@create');
 	$router->post('/new_template/{lt_id}','LetterTemplatesController@initTemplate');
 	$router->post('/finalize_template','LetterTemplatesController@finTemplate');
 	$router->get('/check_docs','LetterTemplatesController@checkDocsValidity');
 	$router->get('/check_docs_v','LetterTemplatesController@checkDocsValidityVerbose');
-//});
+});
 
 
-//$router->group(['middleware'=>'auth'], function() use ($router){
+$router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/logout', 'UsersController@logout');
 	
 	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
@@ -40,7 +40,16 @@
 	$router->post('/move_letter/{letter_id}','LettersController@mvLetter');
 	$router->post('/del_letter/{letter_id}','LettersController@delLetter');
 	$router->post('/res_letter/{letter_id}','LettersController@restoreLetter');
-//});
+
+
+	//new function
+	$router->get('/getName', 'UsersController@getName');
+	$router->post('/star/{id}', 'LettersController@starLetter');
+	$router->get('/getAllDirs', 'LettersController@getAllDirs');
+	$router->get('/getAllFiles', 'LettersController@getAllFiles');
+	$router->get('/getHistory', 'LettersController@getHistory');
+	$router->post('/makeDir', 'LettersController@makeDir');
+});
 
 $router->post('/login', 'UsersController@login');
 $router->post('/register','UsersController@register');
@@ -58,47 +67,3 @@ $router->get('/', function(){
 });
 
 $router->get('/restart_all_system', 'LettersController@reset');
-
-
-
-//new function
-$router->get('/getName', 'UsersController@getName');
-$router->post('/star/{id}', 'LettersController@starLetter');
-$router->get('/getAllDirs', 'LettersController@getAllDirs');
-$router->get('/getAllFiles', 'LettersController@getAllFiles');
-$router->get('/getHistory', 'LettersController@getHistory');
-$router->post('/makeDir', 'LettersController@makeDir');
-
-/*// API route group
-$router->group(['prefix' => 'api'], function () use ($router) {
-     // Matches "/api/register
-    $router->post('register', 'AuthController@register');
-
-      // Matches "/api/login
-     $router->post('login', 'AuthController@login');
-});*/
-
-// API route group
-$router->group(['prefix' => 'api'], function () use ($router) {
-    // Matches "/api/register
-   $router->post('register', 'AuthController@register');
-     // Matches "/api/login
-    $router->post('login', 'AuthController@login');
-
-    // Matches "/api/profile
-    $router->get('profile', 'UserController@profile');
-
-    // Matches "/api/users/1 
-    //get one user by id
-    $router->get('users/{id}', 'UserController@singleUser');
-
-    // Matches "/api/users
-    $router->get('users', 'UserController@allUsers');
-});
-
-
-$router->group(['middleware'=>'auth'], function() use ($router){
-	$router->get('aingcupu',function(){
-		return "yeeeeeeeeeeeeeeeeesssss";
-	});
-});
