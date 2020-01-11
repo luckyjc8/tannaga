@@ -73,22 +73,6 @@ class UsersController extends Controller
 		return (!preg_match("/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix", $str)) ? FALSE : TRUE;
 	}
 
-	public function getName(Request $request){
-		$user = User::where('_id', $request->header('user_id'))->first();
-		if ($user==null) {
-			$response =[
-				"status" => "ERROR",
-				"msg" => "User not found."
-			];
-		}
-		else {
-			$response = [
-				"status" => "OK",
-				"name" => $user->name
-			];
-		}
-		return response($response);
-	}
 	public function register(Request $request){
 		if (!$this->valid_email($request->email)){
 			return response(["status"=> "ERROR", "msg" => "Email invalid"]);
@@ -123,6 +107,22 @@ class UsersController extends Controller
             //return error message
             return response()->json(['message' => 'User Registration Failed!'], 409);
         }
+	}
+	public function getName(Request $request){
+		$user = User::where('_id', $request->header('user_id'))->first();
+		if ($user==null) {
+			$response =[
+				"status" => "ERROR",
+				"msg" => "User not found."
+			];
+		}
+		else {
+			$response = [
+				"status" => "OK",
+				"name" => $user->name
+			];
+		}
+		return response($response);
 	}
 
 	public function activateAccount($id, $token){

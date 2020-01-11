@@ -46,7 +46,7 @@ class LettersController extends Controller{
             ->where('type', '=', 'file')
             ->where('filename', '=', pathinfo($filename, PATHINFO_FILENAME))
             ->first();
-        return "yes";
+        return $file;
     }
 
     private function getFileDriveID($fileDrive){
@@ -234,9 +234,9 @@ class LettersController extends Controller{
         if($letter==null){
             return ["status"=>"ERROR","msg"=>"Letter does not exist."];
         }
-        $localfile = Storage::disk('local')->get($letter->path);
+        $localfile = Storage::disk('local')->get($letter->path.'/'.$letter->filename.'.docx');
         $filename = $id;
-        Storage::cloud()->put($filename, $localfile);
+        Storage::cloud()->put($filename, $localfile,['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         
         $file = $this->getFileDrive($filename);
 
