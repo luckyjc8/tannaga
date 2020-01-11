@@ -19,6 +19,7 @@ class LetterTemplatesController extends Controller{
     			'status' => "ERROR",
     			'msg' => 'Letter template does not exist.'
     		];
+            return response($response, 400);
     	}
     	else{
     		$file = new TemplateProcessor($this->path($template->name,$i));
@@ -39,7 +40,7 @@ class LetterTemplatesController extends Controller{
                     ];
                 }
                 else{
-                    return response(["status"=>"ERROR","msg"=>"Invalid document."]);
+                    return response(["status"=>"ERROR","msg"=>"Invalid document."], 400);
                 }
             }
             $data['vars'] = $vars;
@@ -48,7 +49,7 @@ class LetterTemplatesController extends Controller{
                 "status" => "OK",
 	        ];
     	}
-    	return response($response);
+    	return response($response, 200);
     }
     
     public function path($name,$i){

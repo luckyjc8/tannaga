@@ -446,4 +446,14 @@ class LettersController extends Controller{
         ];
         return response($response);
     }
+    public function buatsurat(Request $request)
+    {
+        $letter = new Letter;
+        $letter->user_id = $request->header('user_id');
+        $letter->filename = $request->filename != null ? $request->filename : 'file';
+        $letter->path = $request->path;
+        $letter->starred = false;
+        $letter->save();
+        return "ok";
+    }
 }
