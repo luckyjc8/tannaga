@@ -128,19 +128,19 @@ class UsersController extends Controller
 	public function activateAccount($id, $token){
 		$user = User::where('_id',$id)->first();
 		if ($user==null) {
-			return redirect('tannaga-dev.com/activate?success=1&msg=User+not+found.');
+			return redirect('http://tannaga-dev.com/auth/activate/404');
 		}
 		else if ($user->is_activated){
-			return redirect('tannaga-dev.com/activate?success=1&msg=User+already+activated.');
+			return redirect('http://tannaga-dev.com/auth/activate/201');
 		}
 		else if (!Hash::check($token, $user->activate_link)){
-			return redirect('tannaga-dev.com/activate?success=1&msg=Token+invalid.');
+			return redirect('http://tannaga-dev.com/auth/activate/403');
 		}
 		else{
 			$user->is_activated = true;
 			$user->activate_link = null;
 			$user->save();
-			return redirect('tannaga-dev.com/activate?success=1&msg=User+activated.');
+			return redirect('http://tannaga-dev.com/auth/activate/200');
 		}
 	}
 
@@ -209,6 +209,18 @@ class UsersController extends Controller
 			];
 		}
 		return response($response);
+	}
+
+	public function renewPassword(Request $request){
+		$user = User::where('_id',$request->header('user_id'))->first();
+		if (!Hash::check($request->old_password, $user->password)) {
+			return response(['status'=>"ERROR",'msg'=>'Invalid password.']);
+		}
+		else{
+			$user->password = app('hash')->make($request->new_password);
+			$user->save();
+			return response(['status'=>'OK','msg'=>'Password changed.']);
+		}
 	}
 
 	public function login(Request $request){

@@ -19,6 +19,11 @@ use \PhpOffice\PhpWord\TemplateProcessor;
 class LettersController extends Controller{
 
     //internal function
+
+    private function filepath($letter){
+        return $letter->path.'/'.$letter->filename;
+    }
+
     private function dateTimeToIndo($dt){
         $mon = "";
         $res = $dt->day." ";
@@ -41,6 +46,7 @@ class LettersController extends Controller{
     }
     
     private function getFileDrive($filename){
+        //get file from drive
         $contents = collect(Storage::cloud()->listContents('/', false));
         $file = $contents
             ->where('type', '=', 'file')
@@ -50,6 +56,7 @@ class LettersController extends Controller{
     }
 
     private function getFileDriveID($fileDrive){
+        //get fileId from a file in drive
         $rawLink = Storage::cloud()->url($fileDrive['basename']);
         $rawLink = parse_url($rawLink, PHP_URL_QUERY);
         $fileId = substr(explode('&', $rawLink)[0],3);
@@ -57,6 +64,7 @@ class LettersController extends Controller{
     }
 
     private function convertToPdf($fileDrive){
+        //convert file in drive to pdf file
         $service = Storage::cloud()->getAdapter()->getService();
         $newFile = new \Google_Service_Drive_DriveFile(array(
             'name' => $fileDrive["filename"].'gdocs',
@@ -66,21 +74,6 @@ class LettersController extends Controller{
         $gdocsId = $service->files->copy($fileId, $newFile)->id;
         $pdfFile = $service->files->export($gdocsId, 'application/pdf', array('alt'=>'media'));
         return $pdfFile;
-    }
-
-    private function filepath($letter){
-        return $letter->path.'/'.$letter->filename;
-    }
-
-    private function restoreFromTrash($l){
-        Storage::disk('local')->move(
-            $l->path.'/'.$l->filename.'.docx',
-            $l->old_path.'/'.$l->filename.'.docx',
-        );
-        $l->path = $l->old_path;
-        $l->deleted_at = null;
-        $l->old_path=null;
-        $l->save();
     }
 
     private function moveToTrash($l){
@@ -93,34 +86,57 @@ class LettersController extends Controller{
         $l->deleted_at = Carbon::now();
         $l->save();
     }
+  
+    private function restoreFromTrash($l){
+        Storage::disk('local')->move(
+            $l->path.'/'.$l->filename.'.docx',
+            $l->old_path.'/'.$l->filename.'.docx',
+        );
+        $l->path = $l->old_path;
+        $l->deleted_at = null;
+        $l->old_path=null;
+        $l->save();
+    }
+
+
+    /*-------------------------------------------------------------------------*/
+    /*-------------------------------------------------------------------------*/
+    /*-------------------------------------------------------------------------*/
+    /*-------------------------------------------------------------------------*/
+
 
     //main function
-    public function generate(Request $request,$id){
-        $uid = $request->header("user_id");
+    public function generate(Request $request,$letter_id){
+        $user_id = $request->header("user_id");
         $values = $request->request->all();
-        $lt = LetterTemplate::where('_id',$id)->first();
-        if($lt==null){
+        $letter_template = LetterTemplate::where('_id',$letter_id)->first();
+        if($letter_template==null){
             return ["status"=>"ERROR","msg"=>"Letter template does not exist."];
         }
         $files = [];
-        Storage::disk('public')->deleteDirectory('temp_letters/'.$uid);
-        Storage::disk('public')->makeDirectory('temp_letters/'.$uid);
-        for($i=1 ; $i<=$lt->count;$i++){
-            $file = new TemplateProcessor('letter_template/'.$lt->name.'/temp'.$i.'.docx');
+        Storage::disk('public')->deleteDirectory('temp_letters/'.$user_id);
+        Storage::disk('public')->makeDirectory('temp_letters/'.$user_id);
+        for($i=1 ; $i<=$letter_template->count;$i++){
+            $file = new TemplateProcessor('letter_template/'.$letter_template->name.'/temp'.$i.'.docx');
             $vars = $file->getVariables();
             $vars = array_diff($vars,array("_now_date"));
             if (count($values) < count($vars)){
                 return ["status"=>"ERROR","msg"=>"Incomplete parameters."];
             };
             $keys = array_keys($values); //reindexing $values
-            foreach($values as $key => $val){
+            foreach($values as $key => $value){
                 try{   
-                    $values[$key] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $val));
+                    if ($key == "datetime1"){
+                        $values[$key] = Carbon::createFromFormat('dddd', $value).$this->dateTimeToIndo(Carbon::createFromFormat('d-m-Y', $value));
+                    }
+                    else{
+                        $values[$key] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $value));
+                    }
                 }
                 catch(Exception $e){
                 }
             }
-            $path = "temp_letters/".$uid."/exam".$i.".docx";
+            $path = "temp_letters/".$user_id."/exam".$i.".docx";
             foreach ($vars as $var) {
                 $nm = explode('_',$var)[1];
                 $file->setValue($var, $values[$nm]);
@@ -130,10 +146,10 @@ class LettersController extends Controller{
             $file->saveAs($path);
             $localfile = Storage::disk('public')->get('/'.$path);
             Storage::disk('public')->put($path, $localfile);
-            $files[] = env("APP_URL").'/temp_letters/'.$uid.'/exam'.$i.'.docx';
+            $files[] = env("APP_URL").'/'.$path;
         }
-        $data['id'] = $uid;
-        $data['template'] = $lt;
+        $data['id'] = $user_id;
+        $data['template'] = $letter_template;
         $data['files'] = $files;
         $response = [
             "status" => "OK",
@@ -144,25 +160,21 @@ class LettersController extends Controller{
 
     public function finalize(Request $request){
         $public_path = 'temp_letters/'.$request->header('user_id').'/exam'.$request->n.'.docx';
-        $storage_path = 'letters/'.$request->header('user_id');
-        $storage_path .= $request->dir!=null?'/'.$request->dir:null;
-
-        $localfile = Storage::disk('public')->get($public_path);
-        if($localfile==null){
-            return response(["status"=>"ERROR","msg"=>"Letter does not exist"]);
+        $public_file = Storage::disk('public')->get($public_path);
+        if($public_file==null){
+            return response(["status" => "ERROR","msg" => "Letter does not exist"]);
         }
 
-        //create new Letter
+        //create new Letter in DB
         $letter = new Letter;
         $letter->user_id = $request->header('user_id');
         $letter->filename = $request->filename != null ? $request->filename : 'file';
-        $letter->path = $storage_path;
+        $letter->path = 'letters/'.$request->header('user_id');
         $letter->save();
-
         $filepath = $this->filepath($letter);
 
-        Storage::disk('local')->put($filepath.'.docx', $localfile);
-        Storage::cloud()->put($letter->filename.'.docx', $localfile, ['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+        Storage::disk('local')->put($filepath.'.docx', $public_file);
+        Storage::cloud()->put($letter->filename.'.docx', $public_file, ['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         $fileDrive = $this->getFileDrive($letter->filename);
         $pdfFile = $this->convertToPdf($fileDrive);
         Storage::disk('local')->put($filepath.'.pdf', $pdfFile->getBody());
@@ -179,13 +191,16 @@ class LettersController extends Controller{
     public function emailLetter(Request $request){
         //email from local to email address
         $letter = Letter::where('_id',$request->letter_id)->first();
-        $path = $filepath($letter).'.docx';
+        $path = $this->filepath($letter).'.docx';
+        if ($request->pdf){
+            $path = $this->filepath($letter).'.pdf';
+        }
         if($request->recipient != null){
             try {
                 Mail::to($request->recipient)->send(new LetterSender($path));
             }
             catch (Exception $e) {
-                return response(["status"=>"ERROR","msg"=>"Error send letter."]);
+                return response(["status" => "ERROR","msg" => "Error send letter."]);
             }
         }
         else{
@@ -209,34 +224,34 @@ class LettersController extends Controller{
             return response(['status'=>'ERROR','msg'=>'Access forbidden.']);
         }
         else{
-            Storage::disk('public')->deleteDirectory($letter->path);
-            Storage::disk('public')->makeDirectory($letter->path);
+            Storage::disk('public')->deleteDirectory('downloads/'.$letter->path);
+            Storage::disk('public')->makeDirectory('downloads/'.$letter->path);
 
             $filepath = $this->filepath($letter);
 
             $letter_docx = Storage::disk('local')->get($filepath.'.docx');
-            Storage::disk('public')->put($filepath.'.docx', $letter_docx);
+            Storage::disk('public')->put('downloads/'.$filepath.'.docx', $letter_docx);
 
             $letter_pdf = Storage::disk('local')->get($filepath.'.pdf');
-            Storage::disk('public')->put($filepath.'.pdf', $letter_pdf);
+            Storage::disk('public')->put('downloads/'.$filepath.'.pdf', $letter_pdf);
 
             $response = [
                 "status" => "OK",
-                "linkdocx" => env("APP_URL").'/'.$filepath.'.docx',
-                "linkpdf" => env("APP_URL").'/'.$filepath.'.pdf'
+                "linkdocx" => env("APP_URL").'/downloads/'.$filepath.'.docx',
+                "linkpdf" => env("APP_URL").'/downloads/'.$filepath.'.pdf'
             ];
             return response($response);
         }
     }
 
-    public function uploadLetter($id){
+    public function uploadLetter($letter_id){
         //upload from local to drive
-        $letter = Letter::where('_id', $id)->first();
+        $letter = Letter::where('_id', $letter_id)->first();
         if($letter==null){
             return ["status"=>"ERROR","msg"=>"Letter does not exist."];
         }
         $localfile = Storage::disk('local')->get($letter->path.'/'.$letter->filename.'.docx');
-        $filename = $id;
+        $filename = $letter_id;
         Storage::cloud()->put($filename, $localfile,['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         
         $file = $this->getFileDrive($filename);
@@ -253,9 +268,9 @@ class LettersController extends Controller{
         return $file;
     }
 
-    public function editLetter($id){
+    public function editLetter($letter_id){
         //edit file in drive
-        $file = $this->uploadLetter($id);
+        $file = $this->uploadLetter($letter_id);
         $fileId = $this->getFileDriveID($file);
         $link = "https://docs.google.com/document/d/".$fileId."/edit";
         $response = [
@@ -266,13 +281,13 @@ class LettersController extends Controller{
         return response($response);
     }
 
-    public function saveLetter($id){
+    public function saveLetter($letter_id){
         //save letter from drive to local
-        $letter = Letter::where('_id', $id)->first();
+        $letter = Letter::where('_id', $letter_id)->first();
         if (!$letter) {
             return response(["status"=>"ERROR","msg"=>"Letter does not exist."]);
         }
-        $filename = $id;
+        $filename = $letter_id;
         $file = $this->getFileDrive($filename);
         if (!$file) {
             return response(["status"=>"ERROR","msg"=>"File does not exist."]);
@@ -286,8 +301,8 @@ class LettersController extends Controller{
         return response($response);
     }
 
-    public function preview($id, $name){
-        return Storage::disk('public')->get('/temp_letters/'.$id.'/'.$name);
+    public function preview($user_id, $name){
+        return Storage::disk('public')->get('/temp_letters/'.$user_id.'/'.$name);
     }
 
     public function indexDirContent(Request $request, $dir=null){
@@ -297,27 +312,27 @@ class LettersController extends Controller{
     }
 
     public function mvLetter(Request $request, $letter_id){
-        $l = Letter::where('_id',$letter_id)->first();
-        if($l==null){
+        $letter = Letter::where('_id',$letter_id)->first();
+        if($letter==null){
             return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
         }
         try{
-            Storage::disk('local')->move($l->path,$request->new_path);
+            Storage::disk('local')->move($letter->path,$request->new_path);
         }
         catch(Exception $e){
             return response(['status'=>'ERROR','msg'=>'Invalid directory.']);
         }
-        $l->path = $request->new_path;
-        $l->save();
+        $letter->path = $request->new_path;
+        $letter->save();
         return response(['status'=>'OK','msg'=>'Move success.']);
     }
 
     public function delLetter($letter_id){
-        $l = Letter::where('_id',$letter_id)->first();
-        if($l==null || $l->deleted_at){
+        $letter = Letter::where('_id',$letter_id)->first();
+        if($letter==null || $letter->deleted_at){
             return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
         }
-        if($l->starred){
+        if($letter->starred){
             return response(['status'=>'ERROR','msg'=>'Letter is starred.']);
         }
         try{
@@ -330,15 +345,14 @@ class LettersController extends Controller{
     }
 
     public function restoreLetter($letter_id){
-        $l = Letter::where('_id',$letter_id)->first();
-        if($l==null || !$l->deleted_at){
+        $letter = Letter::where('_id',$letter_id)->first();
+        if($letter==null || !$letter->deleted_at){
             return response(['status'=>'ERROR','msg'=>'Letter does not exist.']);
         }
         try{
-            $this->restoreFromTrash($l);
+            $this->restoreFromTrash($letter);
         }
         catch(Exception $e){
-            dd($e);
             return response(['status'=>'ERROR','msg'=>'Failed to restore letter.']);
         }
         return response(['status'=>'OK','msg'=>"Restore success"]);
@@ -347,8 +361,7 @@ class LettersController extends Controller{
     public function starLetter(Request $request, $id){
         $letter = Letter::where('user_id',$request->header('user_id'))->where('_id',$id)->first();
         if(!$letter){
-            //return response(['status'=>'ERROR','msg'=>'No such letter']);
-            return response(['id'=>$id,'user_id'=>$request->header('user_id')]);
+            return response(['status'=>'ERROR','msg'=>'Letter not exist']);
         }
         $letter->starred = !$letter->starred;
         $letter->save();
@@ -382,15 +395,6 @@ class LettersController extends Controller{
                 $letters[] = $letter;
             }
         }
-        $response = [
-            "status" => "OK",
-            "letters" => $letters
-        ];
-        return response($response);
-    }
-
-    public function getHistory(Request $request){
-        $letters = Letter::where('user_id', $request->header('user_id'))->get();
         $response = [
             "status" => "OK",
             "letters" => $letters
@@ -438,23 +442,16 @@ class LettersController extends Controller{
             $letter->delete();
             $letter = Letter::first();
         }
-        Storage::disk('public')->deleteDirectory('letters');
+        Storage::disk('public')->deleteDirectory('downloads');
         Storage::disk('public')->deleteDirectory('temp_letters');
         Storage::disk('local')->deleteDirectory('letters');
+        Storage::disk('public')->makeDirectory('downloads');
+        Storage::disk('public')->makeDirectory('temp_letters');
+        Storage::disk('local')->makeDirectory('letters');
         $response = [
             "status" => "OK",
             "msg" => "Cleaned"
         ];
         return response($response);
-    }
-    public function buatsurat(Request $request)
-    {
-        $letter = new Letter;
-        $letter->user_id = $request->header('user_id');
-        $letter->filename = $request->filename != null ? $request->filename : 'file';
-        $letter->path = $request->path;
-        $letter->starred = false;
-        $letter->save();
-        return "ok";
     }
 }

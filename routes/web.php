@@ -26,12 +26,12 @@ $router->post('/email_letter','LettersController@emailLetter');
 $router->post('/download_letter','LettersController@downloadLetter');
 $router->get('/save_letter/{id}',"LettersController@saveLetter");
 
+
+$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
+
 $router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/logout', 'UsersController@logout');
 	
-	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
-	
-
 	$router->get('/preview/{id}/{filename}','LettersController@preview');
 
 	$router->post('/generate/{id}','LettersController@generate');
@@ -49,9 +49,12 @@ $router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/star/{id}', 'LettersController@starLetter');
 	$router->get('/getAllDirs', 'LettersController@getAllDirs');
 	$router->get('/getAllFiles', 'LettersController@getAllFiles');
-	$router->get('/getHistory', 'LettersController@getAllFiles');
 	$router->post('/makeDir', 'LettersController@makeDir');
 	$router->get('/getAllTemplates', 'LetterTemplatesController@getTemplates');
+
+
+	//January 12th function
+	$router->post('/renewPassword', 'UsersController@renewPassword');
 });
 
 $router->post('/login', 'UsersController@login');
