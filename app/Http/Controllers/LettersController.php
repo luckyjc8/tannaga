@@ -24,6 +24,20 @@ class LettersController extends Controller{
         return $letter->path.'/'.$letter->filename;
     }
 
+    private function dateTimeToDayOfWeek($dt){
+        $day = "";
+        switch($dt->dayOfWeek){
+            case 1: $day = "Senin"; break;
+            case 2: $day = "Selasa"; break;
+            case 3: $day = "Rabu"; break;
+            case 4: $day = "Kamis"; break;
+            case 5: $day = "Jumat"; break;
+            case 6: $day = "Sabtu"; break;
+            case 7: $day = "Minggu"; break;
+        }
+        return $day;
+    }
+
     private function dateTimeToIndo($dt){
         $mon = "";
         $res = $dt->day." ";
@@ -124,21 +138,21 @@ class LettersController extends Controller{
                 return ["status"=>"ERROR","msg"=>"Incomplete parameters."];
             };
             $keys = array_keys($values); //reindexing $values
-            foreach($values as $key => $value){
-                try{   
-                    if ($key == "datetime1"){
-                        $values[$key] = Carbon::createFromFormat('dddd', $value).$this->dateTimeToIndo(Carbon::createFromFormat('d-m-Y', $value));
-                    }
-                    else{
-                        $values[$key] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $value));
-                    }
-                }
-                catch(Exception $e){
-                }
-            }
             $path = "temp_letters/".$user_id."/exam".$i.".docx";
             foreach ($vars as $var) {
                 $nm = explode('_',$var)[1];
+                $type = explode('_', $var)[0];
+                try {
+                    if ($type == 'datetime'){
+                        $values[$nm] = $this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $values[$nm]));
+                    }
+                    else if ($type == 'datetime1'){
+                        $values[$nm] = $this->dateTimeToDayOfWeek(Carbon::createFromFormat('Y-m-d', $values[$nm])).', '.$this->dateTimeToIndo(Carbon::createFromFormat('Y-m-d', $values[$nm]));
+                    }
+                } catch (Exception $e) {
+                    
+                }
+                
                 $file->setValue($var, $values[$nm]);
             }
             $now = $this->dateTimeToIndo(Carbon::now()->setTimezone('Asia/Jakarta'));
@@ -159,6 +173,7 @@ class LettersController extends Controller{
     }
 
     public function finalize(Request $request){
+        //letter from temp_letters go to storage/app/letters/$user_id
         $public_path = 'temp_letters/'.$request->header('user_id').'/exam'.$request->n.'.docx';
         $public_file = Storage::disk('public')->get($public_path);
         if($public_file==null){
@@ -174,10 +189,10 @@ class LettersController extends Controller{
         $filepath = $this->filepath($letter);
 
         Storage::disk('local')->put($filepath.'.docx', $public_file);
-        Storage::cloud()->put($letter->filename.'.docx', $public_file, ['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+        /*Storage::cloud()->put($letter->filename.'.docx', $public_file, ['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         $fileDrive = $this->getFileDrive($letter->filename);
         $pdfFile = $this->convertToPdf($fileDrive);
-        Storage::disk('local')->put($filepath.'.pdf', $pdfFile->getBody());
+        Storage::disk('local')->put($filepath.'.pdf', $pdfFile->getBody());*/
         
         $response = [
             "status" => "OK",
@@ -215,6 +230,7 @@ class LettersController extends Controller{
     }
 
     public function downloadLetter(Request $request){
+        //letter from storage/app/letters/$user_id go to public/download/letters/$user_id
         //download from local to your computer
         $letter = Letter::where('_id',$request->letter_id)->first();
         if($letter==null){
@@ -232,46 +248,50 @@ class LettersController extends Controller{
             $letter_docx = Storage::disk('local')->get($filepath.'.docx');
             Storage::disk('public')->put('downloads/'.$filepath.'.docx', $letter_docx);
 
-            $letter_pdf = Storage::disk('local')->get($filepath.'.pdf');
-            Storage::disk('public')->put('downloads/'.$filepath.'.pdf', $letter_pdf);
+            // $letter_pdf = Storage::disk('local')->get($filepath.'.pdf');
+            // Storage::disk('public')->put('downloads/'.$filepath.'.pdf', $letter_pdf);
 
             $response = [
                 "status" => "OK",
                 "linkdocx" => env("APP_URL").'/downloads/'.$filepath.'.docx',
-                "linkpdf" => env("APP_URL").'/downloads/'.$filepath.'.pdf'
+                // "linkpdf" => env("APP_URL").'/downloads/'.$filepath.'.pdf'
             ];
             return response($response);
         }
     }
 
     public function uploadLetter($letter_id){
-        //upload from local to drive
+        //upload from local to drive, change it to gdocs file
         $letter = Letter::where('_id', $letter_id)->first();
         if($letter==null){
             return ["status"=>"ERROR","msg"=>"Letter does not exist."];
         }
-        $localfile = Storage::disk('local')->get($letter->path.'/'.$letter->filename.'.docx');
+        $localfile = Storage::disk('local')->get($this->filepath($letter).'.docx');
         $filename = $letter_id;
         Storage::cloud()->put($filename, $localfile,['mimetype'=>'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         
         $file = $this->getFileDrive($filename);
-
+        $fileId = $this->getFileDriveID($file);
         // Change permissions of that file
         // - https://developers.google.com/drive/v3/web/about-permissions
         // - https://developers.google.com/drive/v3/reference/permissions
         $service = Storage::cloud()->getAdapter()->getService();
+        $newFile = new \Google_Service_Drive_DriveFile(array(
+            'name' => $letter->filename.'_'.$file["filename"],
+            'mimeType' => 'application/vnd.google-apps.document'
+        ));
+        $gdocsId = $service->files->copy($fileId, $newFile)->id;
         $permission = new \Google_Service_Drive_Permission();
         $permission->setRole('writer');
         $permission->setType('anyone');
         $permission->setAllowFileDiscovery(false);
-        $permissions = $service->permissions->create($file['basename'], $permission);
-        return $file;
+        $permissions = $service->permissions->create($gdocsId, $permission);
+        return $gdocsId;
     }
 
     public function editLetter($letter_id){
         //edit file in drive
-        $file = $this->uploadLetter($letter_id);
-        $fileId = $this->getFileDriveID($file);
+        $fileId = $this->uploadLetter($letter_id);
         $link = "https://docs.google.com/document/d/".$fileId."/edit";
         $response = [
             "status" => "OK",
@@ -336,7 +356,7 @@ class LettersController extends Controller{
             return response(['status'=>'ERROR','msg'=>'Letter is starred.']);
         }
         try{
-            $this->moveToTrash($l);
+            $this->moveToTrash($letter);
         }
         catch(Exception $e){
             return response(['status'=>'ERROR','msg'=>'Failed to delete letter.']);

@@ -21,13 +21,7 @@ $router->group(['middleware'=>'admin'], function() use ($router){
 });
 
 
-$router->post('/edit_letter/{id}', "LettersController@editLetter");
-$router->post('/email_letter','LettersController@emailLetter');
-$router->post('/download_letter','LettersController@downloadLetter');
-$router->get('/save_letter/{id}',"LettersController@saveLetter");
-
-
-$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
+$router->get('/checksystem', 'LetterTemplatesController@getTemplates');
 
 $router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/logout', 'UsersController@logout');
@@ -37,6 +31,16 @@ $router->group(['middleware'=>'auth'], function() use ($router){
 	$router->post('/generate/{id}','LettersController@generate');
 	$router->post('/finalize','LettersController@finalize');
 	
+
+	$router->post('/edit_letter/{id}', "LettersController@editLetter");
+	$router->get('/save_letter/{id}',"LettersController@saveLetter");
+	
+
+	$router->post('/email_letter','LettersController@emailLetter');
+	$router->post('/download_letter','LettersController@downloadLetter');
+
+
+	$router->get('/get_fields/{id}','LetterTemplatesController@getFields');
 
 	$router->get('/index_dir[/{dir:.*}]','LettersController@indexDirContent');
 	$router->post('/move_letter/{letter_id}','LettersController@mvLetter');
