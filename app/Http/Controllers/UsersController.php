@@ -84,7 +84,16 @@ class UsersController extends Controller
 			return response(["status"=> "ERROR", "msg" => "Password invalid"]);
 		}
 		try{
-			$user = new User;
+			if ($request->company_token != null){
+				$user = User::where('company_token', $request->company_token)->first();
+				if($user == null){
+					return response(['status'=>"ERROR",'msg'=>'User not found.']);
+				}
+				$user->company_token = null;
+			}
+			else{
+				$user = new User;
+			}
 			foreach($this->fields as $field){
 				$user->$field = $request->$field;
 			}
