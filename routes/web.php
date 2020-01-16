@@ -12,13 +12,13 @@
 */
 
 //admin part
-$router->group(['middleware'=>'admin'], function() use ($router){
+// $router->group(['middleware'=>'admin'], function() use ($router){
 	$router->post('/create_template','LetterTemplatesController@create');
 	$router->post('/new_template/{lt_id}','LetterTemplatesController@initTemplate');
 	$router->post('/finalize_template','LetterTemplatesController@finTemplate');
 	$router->get('/check_docs','LetterTemplatesController@checkDocsValidity');
 	$router->get('/check_docs_v','LetterTemplatesController@checkDocsValidityVerbose');
-});
+// });
 
 
 $router->get('/checksystem', 'LetterTemplatesController@getTemplates');
