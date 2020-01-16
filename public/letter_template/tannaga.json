@@ -1,0 +1,11 @@
+{"_id":{"$oid":"5d4d73fe938ad31a4493d540"},"name":"Surat Pengunduran Diri","count":{"$numberInt":"5"},"desc":"Surat untuk mengundurkan diri dari pekerjaan."}
+{"_id":{"$oid":"5d4d77e96cdd0c1a449bc1b9"},"name":"Surat Penolakan Lamaran Pekerjaan","count":{"$numberInt":"1"},"desc":"Surat untuk menolak lamaran pekerjaan."}
+{"_id":{"$oid":"5d4d77f06cdd0c1a449bc1ba"},"name":"Surat PHK","count":{"$numberInt":"3"},"desc":"Surat untuk memutuskan hubungan kerja dengan karyawan."}
+{"_id":{"$oid":"5d4d77f36cdd0c1a449bc1bb"},"name":"Surat Referensi Kerja","count":{"$numberInt":"4"},"desc":"Surat untuk mereferensikan pekerjaan."}
+{"_id":{"$oid":"5e19aedeeae68f4e1887b453"},"name":"Surat Penerimaan Lamaran Pekerjaan","count":{"$numberInt":"1"},"desc":"Surat untuk menerima lamaran pekerjaan."}
+{"_id":{"$oid":"5e1ce921d7b22747a0f8090e"},"name":"Surat Panggilan Wawancara","count":{"$numberInt":"1"},"desc":""}
+{"_id":{"$oid":"5e1ce92ad7b22747a0f8090f"},"name":"Surat Pemberitahuan Libur Bersama","count":{"$numberInt":"1"},"desc":""}
+{"_id":{"$oid":"5e1ce931d7b22747a0f80910"},"name":"Surat Ucapan Terima Kasih","count":{"$numberInt":"1"},"desc":""}
+{"_id":{"$oid":"5e1ce937d7b22747a0f80911"},"name":"Surat Undangan Orang Tua","count":{"$numberInt":"1"},"desc":""}
+{"_id":{"$oid":"5e1ceb3ad7b22747a0f80912"},"name":"Surat Undangan Upacara 17 Agustus","count":{"$numberInt":"1"},"desc":""}
+{"_id":{"$oid":"5e208cc70074743c083d7f16"},"name":"Surat Izin Keramaian dan Pengawasan Hotel","count":{"$numberInt":"1"},"desc":""}
